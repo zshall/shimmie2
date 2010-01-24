@@ -31,15 +31,10 @@ class QRImage implements Extension {
 	private function data($image) {
 		global $config;
 		$i_image_id = int_escape($image->id);
-<<<<<<< HEAD
 		if($config->get_bool('nice_urls', false)) {
 		return array(
 			'image_src'	=> $this->hostify('?q=/image/'.$i_image_id));
 		}
-=======
-		return array(
-			'image_src'	=> $this->hostify('/image/'.$i_image_id));
->>>>>>> origin/master
 	}
 }
 add_event_listener(new QRImage());
