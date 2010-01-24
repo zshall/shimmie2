@@ -10,9 +10,6 @@ function _new_user($row) {
  * The currently logged in user will always be accessable via the global variable $user
  */
 class User {
-	var $config;
-	var $database;
-
 	var $id;
 	var $name;
 	var $email;
@@ -96,6 +93,16 @@ class User {
 	}
 
 	/**
+	 * Test if this user is logged in
+	 *
+	 * @retval bool
+	 */
+	public function is_logged_in() {
+		global $config;
+		return ($this->id != $config->get_int('anon_id'));
+	}
+
+	/**
 	 * Test if this user is an administrator
 	 *
 	 * @retval bool
@@ -135,7 +142,7 @@ class User {
 		if($config->get_string("avatar_host") == "gravatar") {
 			if(!empty($this->email)) {
 				$hash = md5(strtolower($this->email));
-				$args = $config->get_string("avatar_gravatar_options");
+				$args = $config->get_string("avatar_gravatar_type").$config->get_string("avatar_gravatar_rating");
 				return "<img class=\"avatar gravatar\" src=\"http://www.gravatar.com/avatar/$hash.jpg?$args\">";
 			}
 		}
