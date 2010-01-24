@@ -1,7 +1,8 @@
 <?php
 
 class ExtManagerTheme extends Themelet {
-	public function display_table(Page $page, $extensions) {
+	public function display_table(Page $page, $extensions, $editable) {
+		$en = $editable ? "<th>Enabled</th>" : "";
 		$html = "
 			<form action='".make_link("ext_manager/set")."' method='POST'>
 				<script>
@@ -11,29 +12,35 @@ class ExtManagerTheme extends Themelet {
 				</script>
 				<table id='extensions' class='zebra'>
 					<thead>
-						<tr><th>Enabled</td><th>Name</th><th>Description</th></tr>
+						<tr>$en<th>Name</th><th>Description</th></tr>
 					</thead>
 					<tbody>
 		";
 		$n = 0;
 		foreach($extensions as $extension) {
+			if(!$editable && $extension->visibility == "admin") continue;
+
 			$ext_name = $extension->ext_name;
 			$h_name = empty($extension->name) ? $ext_name : html_escape($extension->name);
 			$h_description = html_escape($extension->description);
-			$h_enabled = $extension->enabled ? " checked='checked'" : "";
+			if($extension->enabled === TRUE) $h_enabled = " checked='checked'";
+			else if($extension->enabled === FALSE) $h_enabled = "";
+			else $h_enabled = " disabled checked='checked'";
 			$h_link = make_link("ext_doc/".html_escape($extension->ext_name));
 			$oe = ($n++ % 2 == 0) ? "even" : "odd";
 
+			$en = $editable ? "<td><input type='checkbox' name='ext_$ext_name'$h_enabled></td>" : "";
 			$html .= "
 				<tr class='$oe'>
-					<td><input type='checkbox' name='ext_$ext_name'$h_enabled></td>
+					$en
 					<td><a href='$h_link'>$h_name</a></td>
 					<td style='text-align: left;'>$h_description</td>
 				</tr>";
 		}
+		$set = $editable ? "<tfoot><tr><td colspan='5'><input type='submit' value='Set Extensions'></td></tr></tfoot>" : "";
 		$html .= "
 					</tbody>
-					<tfoot><tr><td colspan='5'><input type='submit' value='Set Extensions'></td></tr></tfoot>
+					$set
 				</table>
 			</form>
 		";
@@ -116,7 +123,10 @@ class ExtManagerTheme extends Themelet {
 			<div style='margin: auto; text-align: left; width: 512px;'>
 				$author
 				$version
+				$link
 				<p>$doc
+				<hr>
+				<p><a href='".make_link("ext_manager")."'>Back to the list</a>
 			</div>";
 
 		$page->set_title("Documentation for ".html_escape($info->name));

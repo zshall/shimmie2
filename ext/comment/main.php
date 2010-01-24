@@ -1,4 +1,14 @@
 <?php
+/**
+ * Name: Image Comments
+ * Author: Shish <webmaster@shishnet.org>
+ * Link: http://code.shishnet.org/shimmie2/
+ * License: GPLv2
+ * Description: Allow users to make comments on images
+ * Documentation:
+ *  Formatting is done with the standard formatting API (normally BBCode)
+ */
+
 require_once "lib/akismet.class.php";
 
 class CommentPostingEvent extends Event {
@@ -13,7 +23,7 @@ class CommentPostingEvent extends Event {
 
 /**
  * A comment is being deleted. Maybe used by spam
- * detectors to get a feel for what should be delted
+ * detectors to get a feel for what should be deleted
  * and what should be kept?
  */
 class CommentDeletionEvent extends Event {

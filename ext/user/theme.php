@@ -41,15 +41,16 @@ class UserPageTheme extends Themelet {
 		global $config;
 		$tac = $config->get_string("login_tac", "");
 
-		$tfe = new TextFormattingEvent($tac);
-		send_event($tfe);
-		$tac = $tfe->formatted;
+		if($config->get_bool("login_tac_bbcode")) {
+			$tfe = new TextFormattingEvent($tac);
+			send_event($tfe);
+			$tac = $tfe->formatted;
+		}
 
 		if(empty($tac)) {$html = "";}
 		else {$html = "<p>$tac</p>";}
 
-		$rpk = $config->get_string("api_recaptcha_pubkey");
-		$reca = empty($rpk) ? "" : "<tr><td colspan='2'>".recaptcha_get_html($rpk)."</td></tr>";
+		$reca = "<tr><td colspan='2'>".captcha_get_html()."</td></tr>";
 
 		$html .= "
 		<form action='".make_link("user_admin/create")."' method='POST'>

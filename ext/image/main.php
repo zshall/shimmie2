@@ -1,5 +1,12 @@
 <?php
 /*
+ * Name: Image Manager
+ * Author: Shish
+ * Description: Handle the image database
+ * Visibility: admin
+ */
+
+/*
  * ImageAdditionEvent:
  *   $user  -- the user adding the image
  *   $image -- the image being added
@@ -88,6 +95,7 @@ class ImageIO extends SimpleExtension {
 		$config->set_default_int('thumb_height', 192);
 		$config->set_default_int('thumb_quality', 75);
 		$config->set_default_int('thumb_mem_limit', parse_shorthand_int('8MB'));
+		$config->set_default_string('thumb_convert_path', 'convert.exe');
 
 		$config->set_default_bool('image_show_meta', false);
 		$config->set_default_string('image_ilink', '');
@@ -108,6 +116,24 @@ class ImageIO extends SimpleExtension {
 			else if($event->page_matches("thumb")) {
 				$this->send_file($num, "thumb");
 			}
+		}
+		if($event->page_matches("image_admin/delete")) {
+			global $page, $user;
+			if($user->is_admin() && isset($_POST['image_id'])) {
+				$image = Image::by_id($_POST['image_id']);
+				if($image) {
+					send_event(new ImageDeletionEvent($image));
+					$page->set_mode("redirect");
+					$page->set_redirect(make_link("post/list"));
+				}
+			}
+		}
+	}
+
+	public function onImageAdminBlockBuilding($event) {
+		global $user;
+		if($user->is_admin()) {
+			$event->add_part($this->theme->get_deleter_html($event->image->id));
 		}
 	}
 

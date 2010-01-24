@@ -1,5 +1,11 @@
 <?php
 /*
+ * Name: Image Viewer
+ * Author: Shish
+ * Description: Allows users to see uploaded images
+ */
+
+/*
  * DisplayingImageEvent:
  *   $image -- the image being displayed
  *   $page  -- the page to display on

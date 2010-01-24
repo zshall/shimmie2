@@ -156,7 +156,9 @@ function undb_bool($val) {
 
 /**
  * Figure out the correct way to link to a page, taking into account
- * things like the nice URLs setting
+ * things like the nice URLs setting.
+ *
+ * eg make_link("post/list") becomes "/v2/index.php?q=post/list"
  *
  * @retval string
  */
@@ -194,7 +196,7 @@ function make_link($page=null, $query=null) {
  */
 function make_http($link) {
 	if(strpos($link, "ttp://") > 0) return $link;
-	if($link[0] != '/') $link = get_base_href().'/'.$link;
+	if(strlen($link) > 0 && $link[0] != '/') $link = get_base_href().'/'.$link;
 	$link = "http://".$_SERVER["HTTP_HOST"].$link;
 	$link = str_replace("/./", "/", $link);
 	return $link;
@@ -217,6 +219,9 @@ function theme_file($filepath) {
 
 function captcha_get_html() {
 	global $config, $user;
+
+	if(DEBUG && ip_in_range($_SERVER['REMOTE_ADDR'], "127.0.0.0/8")) return "";
+
 	$captcha = "";
 	if($user->is_anonymous()) {
 		$rpk = $config->get_string("api_recaptcha_pubkey");
@@ -236,6 +241,8 @@ function captcha_get_html() {
 
 function captcha_check() {
 	global $config, $user;
+
+	if(DEBUG && ip_in_range($_SERVER['REMOTE_ADDR'], "127.0.0.0/8")) return true;
 
 	if($user->is_anonymous()) {
 		$rpk = $config->get_string('api_recaptcha_privkey');
@@ -477,19 +484,11 @@ function log_msg($section, $priority, $message) {
 	send_event(new LogEvent($section, $priority, $message));
 }
 
-/**
- * A shorthand way to send a LogEvent
- */
-function log_info($section, $message) {
-	log_msg($section, SCORE_LOG_INFO, $message);
-}
-
-/**
- * A shorthand way to send a LogEvent
- */
-function log_error($section, $message) {
-	log_msg($section, SCORE_LOG_ERROR, $message);
-}
+function log_debug($section, $message) {log_msg($section, SCORE_LOG_DEBUG, $message);}
+function log_info($section, $message)  {log_msg($section, SCORE_LOG_INFO, $message);}
+function log_warning($section, $message) {log_msg($section, SCORE_LOG_WARNING, $message);}
+function log_error($section, $message) {log_msg($section, SCORE_LOG_ERROR, $message);}
+function log_critical($section, $message) {log_msg($section, SCORE_LOG_CRITICAL, $message);}
 
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *\
