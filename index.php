@@ -83,8 +83,8 @@ try {
 	$database = new Database();
 	$database->db->fnExecute = '_count_execs';
 	$config = new DatabaseConfig($database);
+	$user = _get_user($config, $database);
 	$userprefs = new DatabasePrefs($database);
-
 	// load the theme parts
 	$_theme = $config->get_string("theme", "default");
 	if(!file_exists("themes/$_theme")) $_theme = "default";
@@ -121,7 +121,7 @@ try {
 
 	// start the page generation waterfall
 	$page = class_exists("CustomPage") ? new CustomPage() : new Page();
-	$user = _get_user($config, $database);
+	//$user = _get_user($config, $database); //11. let's put this up there.
 	send_event(new InitExtEvent());
 	send_event(_get_page_request());
 	$page->display();

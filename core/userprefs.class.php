@@ -9,7 +9,6 @@ interface UserPrefs {
 	 * configuration
 	 */
 	public function save_prefs($name=null);
-	public function get_userid();
 
 	/** @name set_*
 	 * Set a configuration option to a new value, regardless
@@ -56,14 +55,6 @@ interface UserPrefs {
  */
 abstract class BasePrefs implements UserPrefs {
 	var $values = array();
-	
-	public function userid() {
-		$this->database = $database;
-		$config = new DatabaseConfig($database);
-		$user = _get_user($config, $database);
-		$uid = $user->id;
-		return $uid;
-	}
 
 	public function set_int_userprefs($name, $value) {
 		$this->values[$name] = parse_shorthand_int($value);
@@ -104,11 +95,10 @@ abstract class BasePrefs implements UserPrefs {
 			$this->values[$name] = implode(",", $value);
 		}
 	}
-
 	public function get_int_userprefs($name, $default=null) {
 		return (int)($this->get_userprefs($name, $default));
 	}
-	public function get_string_userprefs($name, $default=null) {
+	public function get_string_userprefs($name, $default=null) { 
 		return $this->get_userprefs($name, $default);
 	}
 	public function get_bool_userprefs($name, $default=null) {
@@ -118,9 +108,9 @@ abstract class BasePrefs implements UserPrefs {
 		return explode(",", $this->get_userprefs($name, ""));
 	}
 
-	private function get_userprefs($name, $default=null) {		
-		if(isset($this->values[$name])) {
-			return $this->values[$name];
+	private function get_userprefs($name, $default=null) {
+		if(isset($this->values[$name])) { 
+			return $this->values[$name]; 
 		}
 		else {
 			return $default;
@@ -136,7 +126,8 @@ abstract class BasePrefs implements UserPrefs {
  *  $config['foo'] = "bar";
  *  $config['baz'] = "qux";
  *  ?>
- *  Unnecessary for what we're doing here...
+ *  Unnecessary for what we're doing here... since it's different
+ *  for every user, we wouldn't need static anything.
  */
 /*class StaticPrefs extends BasePrefs {
 	public function __construct($filename) {
@@ -175,31 +166,27 @@ class DatabasePrefs extends BasePrefs {
 	var $database = null;
 	
 	/*
-	 * Load the config table from a database
+	 * Load user preferences from a the database.
 	 */
 	public function DatabasePrefs($database) {
 		$this->database = $database;
-		$config = new DatabaseConfig($database);
-		$user = _get_user($config, $database);
+		global $user;
 		$userid = $user->id;
 		$cached = $this->database->cache->get("user_prefs");
 		if($cached) {
 			$this->values = $cached;
 		}
 		else {
-			$this->values = $this->database->db->GetAssoc("SELECT user_id, name, value FROM user_prefs WHERE user_id = ?", array($userid));
+			$this->values = $this->database->db->GetAssoc("SELECT name, value FROM user_prefs WHERE user_id = $userid");
 			$this->database->cache->set("user_prefs", $this->values);
 		}
 	}
 
 	/*
-	 * Save the current values as the new config table
+	 * Save the current values for the current user.
 	 */
 	public function save_prefs($name=null) {
-		$database = new Database();
-		$database->db->fnExecute = '_count_execs';
-		$config = new DatabaseConfig($database);
-		$user = _get_user($config, $database);
+		global $user;
 		$userid = $user->id;
 		if(is_null($name)) {
 			foreach($this->values as $name => $value) {

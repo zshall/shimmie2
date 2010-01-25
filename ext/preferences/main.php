@@ -169,11 +169,15 @@ class UserPrefsSetup extends SimpleExtension {
 		$userprefs->set_default_string_userprefs("test_data2", "And here");
 		$userprefs->set_default_bool_userprefs("test_data3", true);
 	}
+	
 
 	public function onPageRequest($event) {
 		global $userprefs, $page, $user;
 		
-		if($event->page_matches("preferences")) {
+		if($event->page_matches("preferences")) { //TODO: let admins set anonymous preferences.
+			if($user->is_anonymous()) {
+				$this->theme->display_permission_denied($page);
+			} else {
 				if($event->get_arg(0) == "save") {
 					send_event(new PrefSaveEvent($userprefs));
 					$userprefs->save_prefs();
@@ -189,6 +193,7 @@ class UserPrefsSetup extends SimpleExtension {
 					send_event(new PrefBuildingEvent($panel));
 					$this->theme->display_page($page, $panel);
 				}
+			}
 		}
 	}
 
@@ -203,7 +208,7 @@ class UserPrefsSetup extends SimpleExtension {
 			$themes[$human] = $name;
 		}
 
-		$sb = new PrefBlock("User Settings");
+		$sb = new PrefBlock("Extension testing block");
 		$sb->position = 0;
 		$sb->add_text_option_userprefs("test_data", "Data1: ");
 		$sb->add_text_option_userprefs("test_data2", "Data2: ");
