@@ -55,7 +55,7 @@ define("DEBUG", true);
 define("COVERAGE", true);
 define("CACHE_MEMCACHE", false);
 define("CACHE_DIR", false);
-define("VERSION", 'trunk');
+define("VERSION", 'trunk-prefs');
 define("SCORE_VERSION", 's2hack/'.VERSION);
 define("COOKIE_PREFIX", 'shm');
 
@@ -83,7 +83,7 @@ try {
 	$database = new Database();
 	$database->db->fnExecute = '_count_execs';
 	$config = new DatabaseConfig($database);
-
+	$userprefs = new DatabasePrefs($database);
 
 	// load the theme parts
 	$_theme = $config->get_string("theme", "default");

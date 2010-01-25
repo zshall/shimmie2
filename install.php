@@ -194,6 +194,11 @@ function create_tables($dsn) { // {{{
 			name VARCHAR(128) NOT NULL PRIMARY KEY,
 			value TEXT
 		"));
+		$db->execute($engine->create_table_sql("user_prefs", "
+			user_id INTEGER NOT NULL,
+			name VARCHAR(128) NOT NULL,
+			value TEXT
+		"));
 		$db->execute($engine->create_table_sql("users", "
 			id SCORE_AIPK,
 			name VARCHAR(32) UNIQUE NOT NULL,
