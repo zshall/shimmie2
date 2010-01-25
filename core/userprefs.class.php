@@ -61,8 +61,8 @@ abstract class BasePrefs implements UserPrefs {
 		$this->save_prefs($name);
 	}
 	public function set_string_userprefs($name, $value) {
-		$this->values[$name] = $value;
-		$this->save_prefs($name);
+		$this->values[$name] = strip_tags( $value ); // These aren't admins we're talking about. Not sure they
+		$this->save_prefs($name);					 // should be able to use tags. Besides, BBcode is implemented.
 	}
 	public function set_bool_userprefs($name, $value) {
 		$this->values[$name] = (($value == 'on' || $value === true) ? 'Y' : 'N');
