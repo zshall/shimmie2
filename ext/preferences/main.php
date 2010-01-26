@@ -226,7 +226,19 @@ class UserPrefsSetup extends SimpleExtension {
 				$type = $_POST["_type_$name"];
 				$value = isset($_POST["_userprefs_$name"]) ? $_POST["_userprefs_$name"] : null;
 				switch($type) {
-					case "string": $userprefs->set_string($name, $value); break;
+					case "string": 
+						$tfe = new TextFormattingEvent($value);
+						send_event($tfe);
+						$value = $tfe->formatted;
+						
+						$value = str_replace('\n\r', '<br>', $value);
+						$value = str_replace('\r\n', '<br>', $value);
+						$value = str_replace('\n', '<br>', $value);
+						$value = str_replace('\r', '<br>', $value);
+						
+						$value = stripslashes($value);
+						$userprefs->set_string($name, $value); 
+						break;
 					case "int":    $userprefs->set_int($name, $value);    break;
 					case "bool":   $userprefs->set_bool($name, $value);   break;
 					case "array":  $userprefs->set_array($name, $value);  break;
