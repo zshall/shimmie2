@@ -197,24 +197,14 @@ class UserPrefsSetup extends SimpleExtension {
 		}
 	}
 
-	public function onPrefBuilding($event) {
-		global $config, $user, $userprefs;
-		$theme_name = $config->get_string('theme');
-		$styles = array();
-		foreach(glob("themes/$theme_name/*.css") as $style_name) {
-			$name = str_replace("themes/$theme_name/", "", $style_name);
-			$human = str_replace("_", " ", $name);
-			$human = ucwords($human);
-			$themes[$human] = $name;
-		}
-
+/*	public function onPrefBuilding($event) { // To test
 		$sb = new PrefBlock("Extension testing block");
 		$sb->position = 0;
 		$sb->add_text_option("test_data", "Data1: ");
 		$sb->add_text_option("test_data2", "Data2: ");
 		$sb->add_bool_option("test_data3", "Data3: ");
 		$event->panel->add_block($sb);
-	}
+	}*/
 
 	public function onPrefSave($event) {
 		global $userprefs;
