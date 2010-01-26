@@ -50,7 +50,7 @@ class UserPrefsSetupTheme extends Themelet {
 
 		$page->set_title("User Preferences");
 		$page->set_heading("User Preferences");
-		$page->add_block(new Block("Navigation", $this->build_navigation(), "left", 0));
+		//$page->add_block(new Block("Navigation", $this->build_navigation(), "left", 0)); // Uncomment for debugging.
 		$page->add_block(new Block("Preferences", $table));
 	}
 
@@ -93,13 +93,13 @@ class UserPrefsSetupTheme extends Themelet {
 		$page->add_block(new Block("Preferences", $table));
 	}
 
-	protected function build_navigation() {
+/*	protected function build_navigation() { return "";
 		return "
 			<a href='".make_link()."'>Index</a>
 			<br><a href='http://redmine.shishnet.org/wiki/shimmie2/Settings'>Help</a>
 			<br><a href='".make_link("preferences/advanced")."'>Advanced</a>
-		";
-	}
+		"; //Uncomment for debugging. Regular users should use advanced settings.
+	}*/
 
 	protected function sb_to_html(PrefBlock $block) {
 		return "<div class='setupblock'><b>{$block->header}</b><br>{$block->body}</div>\n";

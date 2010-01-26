@@ -186,7 +186,8 @@ class UserPrefsSetup extends SimpleExtension {
 					$page->set_redirect(make_link("preferences"));
 				}
 				else if($event->get_arg(0) == "advanced") {
-					$this->theme->display_advanced($page, $userprefs->values);
+					//$this->theme->display_advanced($page, $userprefs->values); //Uncomment for debugging.
+					//The way I see it, regular users don't need advanced settings.
 				}
 				else {
 					$panel = new PrefPanel();
