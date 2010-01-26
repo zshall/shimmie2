@@ -64,9 +64,9 @@ class PrefBlock extends Block {
 		$this->body .= $text;
 	}
 
-	public function add_text_option_userprefs($name, $label=null) {
+	public function add_text_option($name, $label=null) {
 		global $userprefs;
-		$val = html_escape($userprefs->get_string_userprefs($name));
+		$val = html_escape($userprefs->get_string($name));
 		if(!is_null($label)) {
 			$this->body .= "<label for='$name'>$label</label>";
 		}
@@ -74,9 +74,9 @@ class PrefBlock extends Block {
 		$this->body .= "<input type='hidden' name='_type_$name' value='string'>\n";
 	}
 
-	public function add_longtext_option_userprefs($name, $label=null) {
+	public function add_longtext_option($name, $label=null) {
 		global $userprefs;
-		$val = html_escape($userprefs->get_string_userprefs($name));
+		$val = html_escape($userprefs->get_string($name));
 		if(!is_null($label)) {
 			$this->body .= "<label for='$name'>$label</label>";
 		}
@@ -85,9 +85,9 @@ class PrefBlock extends Block {
 		$this->body .= "<input type='hidden' name='_type_$name' value='string'>\n";
 	}
 
-	public function add_bool_option_userprefs($name, $label=null) {
+	public function add_bool_option($name, $label=null) {
 		global $userprefs;
-		$checked = $userprefs->get_bool_userprefs($name) ? " checked" : "";
+		$checked = $userprefs->get_bool($name) ? " checked" : "";
 		if(!is_null($label)) {
 			$this->body .= "<label for='$name'>$label</label>";
 		}
@@ -101,9 +101,9 @@ class PrefBlock extends Block {
 //		$this->body .= "<input type='hidden' id='$name' name='$name' value='$val'>";
 //	}
 
-	public function add_int_option_userprefs($name, $label=null) {
+	public function add_int_option($name, $label=null) {
 		global $userprefs;
-		$val = html_escape($userprefs->get_string_userprefs($name));
+		$val = html_escape($userprefs->get_string($name));
 		if(!is_null($label)) {
 			$this->body .= "<label for='$name'>$label</label>";
 		}
@@ -111,9 +111,9 @@ class PrefBlock extends Block {
 		$this->body .= "<input type='hidden' name='_type_$name' value='int'>\n";
 	}
 
-	public function add_shorthand_int_option_userprefs($name, $label=null) {
+	public function add_shorthand_int_option($name, $label=null) {
 		global $userprefs;
-		$val = to_shorthand_int($userprefs->get_string_userprefs($name));
+		$val = to_shorthand_int($userprefs->get_string($name));
 		if(!is_null($label)) {
 			$this->body .= "<label for='$name'>$label</label>";
 		}
@@ -121,9 +121,9 @@ class PrefBlock extends Block {
 		$this->body .= "<input type='hidden' name='_type_$name' value='int'>\n";
 	}
 
-	public function add_choice_option_userprefs($name, $options, $label=null) {
+	public function add_choice_option($name, $options, $label=null) {
 		global $userprefs;
-		$current = $userprefs->get_string_userprefs($name);
+		$current = $userprefs->get_string($name);
 
 		if(!is_null($label)) {
 			$this->body .= "<label for='$name'>$label</label>";
@@ -140,9 +140,9 @@ class PrefBlock extends Block {
 		$this->body .= $html;
 	}
 
-	public function add_multichoice_option_userprefs($name, $options, $label=null) {
+	public function add_multichoice_option($name, $options, $label=null) {
 		global $userprefs;
-		$current = $userprefs->get_array_userprefs($name);
+		$current = $userprefs->get_array($name);
 
 		if(!is_null($label)) {
 			$this->body .= "<label for='$name'>$label</label>";
@@ -165,9 +165,9 @@ class PrefBlock extends Block {
 class UserPrefsSetup extends SimpleExtension {
 	public function onInitExt($event) {
 		global $userprefs;
-		$userprefs->set_default_string_userprefs("test_data", "Input something here");
-		$userprefs->set_default_string_userprefs("test_data2", "And here");
-		$userprefs->set_default_bool_userprefs("test_data3", true);
+		$userprefs->set_default_string("test_data", "Input something here");
+		$userprefs->set_default_string("test_data2", "And here");
+		$userprefs->set_default_bool("test_data3", true);
 	}
 	
 
@@ -210,9 +210,9 @@ class UserPrefsSetup extends SimpleExtension {
 
 		$sb = new PrefBlock("Extension testing block");
 		$sb->position = 0;
-		$sb->add_text_option_userprefs("test_data", "Data1: ");
-		$sb->add_text_option_userprefs("test_data2", "Data2: ");
-		$sb->add_bool_option_userprefs("test_data3", "Data3: ");
+		$sb->add_text_option("test_data", "Data1: ");
+		$sb->add_text_option("test_data2", "Data2: ");
+		$sb->add_bool_option("test_data3", "Data3: ");
 		$event->panel->add_block($sb);
 	}
 
@@ -226,10 +226,10 @@ class UserPrefsSetup extends SimpleExtension {
 				$type = $_POST["_type_$name"];
 				$value = isset($_POST["_userprefs_$name"]) ? $_POST["_userprefs_$name"] : null;
 				switch($type) {
-					case "string": $userprefs->set_string_userprefs($name, $value); break;
-					case "int":    $userprefs->set_int_userprefs($name, $value);    break;
-					case "bool":   $userprefs->set_bool_userprefs($name, $value);   break;
-					case "array":  $userprefs->set_array_userprefs($name, $value);  break;
+					case "string": $userprefs->set_string($name, $value); break;
+					case "int":    $userprefs->set_int($name, $value);    break;
+					case "bool":   $userprefs->set_bool($name, $value);   break;
+					case "array":  $userprefs->set_array($name, $value);  break;
 				}
 			}
 		}

@@ -15,10 +15,10 @@ interface UserPrefs {
 	 * of what the value is at the moment
 	 */
 	//@{
-	public function set_int_userprefs($name, $value);
-	public function set_string_userprefs($name, $value);
-	public function set_bool_userprefs($name, $value);
-	public function set_array_userprefs($name, $value);
+	public function set_int($name, $value);
+	public function set_string($name, $value);
+	public function set_bool($name, $value);
+	public function set_array($name, $value);
 	//@}
 
 	/** @name set_default_*
@@ -30,10 +30,10 @@ interface UserPrefs {
 	 * "default" paramater won't show up.
 	 */
 	//@{
-	public function set_default_int_userprefs($name, $value);
-	public function set_default_string_userprefs($name, $value);
-	public function set_default_bool_userprefs($name, $value);
-	public function set_default_array_userprefs($name, $value);
+	public function set_default_int($name, $value);
+	public function set_default_string($name, $value);
+	public function set_default_bool($name, $value);
+	public function set_default_array($name, $value);
 	//@}
 
 	/** @name get_*
@@ -41,10 +41,10 @@ interface UserPrefs {
 	 * appropritate data type
 	 */
 	//@{
-	public function get_int_userprefs($name, $default=null);
-	public function get_string_userprefs($name, $default=null);
-	public function get_bool_userprefs($name, $default=null);
-	public function get_array_userprefs($name, $default=array());
+	public function get_int($name, $default=null);
+	public function get_string($name, $default=null);
+	public function get_bool($name, $default=null);
+	public function get_array($name, $default=array());
 	//@}
 }
 
@@ -56,59 +56,59 @@ interface UserPrefs {
 abstract class BasePrefs implements UserPrefs {
 	var $values = array();
 
-	public function set_int_userprefs($name, $value) {
+	public function set_int($name, $value) {
 		$this->values[$name] = parse_shorthand_int($value);
 		$this->save_prefs($name);
 	}
-	public function set_string_userprefs($name, $value) {
+	public function set_string($name, $value) {
 		$this->values[$name] = strip_tags( $value ); // These aren't admins we're talking about. Not sure they
 		$this->save_prefs($name);					 // should be able to use tags. Besides, BBcode is implemented.
 	}
-	public function set_bool_userprefs($name, $value) {
+	public function set_bool($name, $value) {
 		$this->values[$name] = (($value == 'on' || $value === true) ? 'Y' : 'N');
 		$this->save_prefs($name);
 	}
-	public function set_array_userprefs($name, $value) {
+	public function set_array($name, $value) {
 		assert(is_array($value));
 		$this->values[$name] = implode(",", $value);
 		$this->save_prefs($name);
 	}
 
-	public function set_default_int_userprefs($name, $value) {
-		if(is_null($this->get_userprefs($name))) {
+	public function set_default_int($name, $value) {
+		if(is_null($this->get($name))) {
 			$this->values[$name] = parse_shorthand_int($value);
 		}
 	}
-	public function set_default_string_userprefs($name, $value) {
-		if(is_null($this->get_userprefs($name))) {
+	public function set_default_string($name, $value) {
+		if(is_null($this->get($name))) {
 			$this->values[$name] = $value;
 		}
 	}
-	public function set_default_bool_userprefs($name, $value) {
-		if(is_null($this->get_userprefs($name))) {
+	public function set_default_bool($name, $value) {
+		if(is_null($this->get($name))) {
 			$this->values[$name] = (($value == 'on' || $value === true) ? 'Y' : 'N');
 		}
 	}
-	public function set_default_array_userprefs($name, $value) {
+	public function set_default_array($name, $value) {
 		assert(is_array($value));
-		if(is_null($this->get_userprefs($name))) {
+		if(is_null($this->get($name))) {
 			$this->values[$name] = implode(",", $value);
 		}
 	}
-	public function get_int_userprefs($name, $default=null) {
-		return (int)($this->get_userprefs($name, $default));
+	public function get_int($name, $default=null) {
+		return (int)($this->get($name, $default));
 	}
-	public function get_string_userprefs($name, $default=null) { 
-		return $this->get_userprefs($name, $default);
+	public function get_string($name, $default=null) { 
+		return $this->get($name, $default);
 	}
-	public function get_bool_userprefs($name, $default=null) {
-		return undb_bool($this->get_userprefs($name, $default));
+	public function get_bool($name, $default=null) {
+		return undb_bool($this->get($name, $default));
 	}
-	public function get_array_userprefs($name, $default=array()) {
-		return explode(",", $this->get_userprefs($name, ""));
+	public function get_array($name, $default=array()) {
+		return explode(",", $this->get($name, ""));
 	}
 
-	private function get_userprefs($name, $default=null) {
+	private function get($name, $default=null) {
 		if(isset($this->values[$name])) { 
 			return $this->values[$name]; 
 		}
