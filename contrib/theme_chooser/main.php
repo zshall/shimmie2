@@ -33,18 +33,17 @@ class ThemeChooser extends SimpleExtension {
 	// Stats
 	public function onPageRequest($event) {
 		global $page;
+		global $user;
 		if($event->page_matches("theme_stats")) {
-			if(!$user->is_admin()) {
-				$this->theme->display_permission_denied($page);
-			} else {
-				$body = $this->icecream_body();
+			if($user->is_admin()) {
+				$body = $this->page_body();
 				$this->theme->display_page($page, $body);
 			}
 		}
 	}
 	public function onUserBlockBuilding($event) {
 		global $user;
-			if(!$user->is_admin()) {
+			if($user->is_admin()) {
 				$event->add_link("Theme Stats", make_link("theme_stats"));
 			} 
 	}
@@ -55,13 +54,13 @@ class ThemeChooser extends SimpleExtension {
 		$base_href = $config->get_string('base_href');
 		$data_href = get_base_href();
 		
-		$vanilla = ceil($database->db->GetOne('SELECT COUNT(*) FROM `user_prefs` WHERE (`name` = "themechooser_icecream" AND `value` = "style.css")'));
+		$vanilla = ceil($database->db->GetOne('SELECT COUNT(*) FROM `user_prefs` WHERE (`name` = "themechooser_theme" AND `value` = "style.css")'));
 		$v = "$vanilla"; // copying >_>
 		
-		$chocolate = ceil($database->db->GetOne('SELECT COUNT(*) FROM `user_prefs` WHERE (`name` = "themechooser_icecream" AND `value` = "chocolate.css")'));
+		$chocolate = ceil($database->db->GetOne('SELECT COUNT(*) FROM `user_prefs` WHERE (`name` = "themechooser_theme" AND `value` = "chocolate.css")'));
 		$c = "$chocolate";
 		
-		$strawberry = ceil($database->db->GetOne('SELECT COUNT(*) FROM `user_prefs` WHERE (`name` = "themechooser_icecream" AND `value` = "strawberry.css")'));
+		$strawberry = ceil($database->db->GetOne('SELECT COUNT(*) FROM `user_prefs` WHERE (`name` = "themechooser_theme" AND `value` = "strawberry.css")'));
 		$s = "$strawberry";
 		
 		// Add your own here.
