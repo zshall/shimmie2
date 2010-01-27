@@ -163,12 +163,12 @@ class PrefBlock extends Block {
 // }}}
 
 class UserPrefsSetup extends SimpleExtension {
-	public function onInitExt($event) {
+/*	public function onInitExt($event) {
 		global $userprefs;
 		$userprefs->set_default_string("test_data", "Input something here");
 		$userprefs->set_default_string("test_data2", "And here");
 		$userprefs->set_default_bool("test_data3", true);
-	}
+	}*/ // Uncomment for debugging.
 	
 
 	public function onPageRequest($event) {
