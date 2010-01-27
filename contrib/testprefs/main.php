@@ -39,14 +39,14 @@ class TestPrefs extends SimpleExtension {
 	// One way this data could be used:
 	public function onPageRequest($event) {
 		global $page;
-		if($event->page_matches("testprefs")) {
+		if($event->page_matches("icecream")) {
 			$body = $this->page_body();
 			$this->theme->display_page($page, $body);
 		}
 	}
 	public function onUserBlockBuilding($event) {
 		global $user;
-			$event->add_link("Ice Cream War", make_link("testprefs"));
+			$event->add_link("Ice Cream War", make_link("icecream"));
 	}
 	// Show a chart of who liked what ice cream better.
 	private function page_body() {
