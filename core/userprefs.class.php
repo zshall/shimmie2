@@ -56,22 +56,22 @@ interface UserPrefs {
 abstract class BasePrefs implements UserPrefs {
 	var $values = array();
 
-	public function set_int($name, $value) {
+	public function set_int($name, $value, $userid=null) {
 		$this->values[$name] = parse_shorthand_int($value);
-		$this->save_prefs($name);
+		$this->save_prefs($name, $userid);
 	}
-	public function set_string($name, $value) {
+	public function set_string($name, $value, $userid=null) {
 		$this->values[$name] =  $value; //probably better to let bbcode and the extensions handle filtering.
-		$this->save_prefs($name);
+		$this->save_prefs($name, $userid);
 	}
-	public function set_bool($name, $value) {
+	public function set_bool($name, $value, $userid=null) {
 		$this->values[$name] = (($value == 'on' || $value === true) ? 'Y' : 'N');
-		$this->save_prefs($name);
+		$this->save_prefs($name, $userid);
 	}
-	public function set_array($name, $value) {
+	public function set_array($name, $value, $userid=null) {
 		assert(is_array($value));
 		$this->values[$name] = implode(",", $value);
-		$this->save_prefs($name);
+		$this->save_prefs($name, $userid);
 	}
 
 	public function set_default_int($name, $value) {
@@ -184,11 +184,8 @@ class DatabasePrefs extends BasePrefs {
 	 * Save the current values for the current user.
 	 */
 	public function save_prefs($name=null, $uid=null) {
-		if($uid == NULL) {
-			die("argh no uid");
-			global $user;
-			$uid = $user->id;
-		}
+		echo $uid;
+
 		if(is_null($name)) {
 			foreach($this->values as $name => $value) {
 				$this->save_prefs($name);

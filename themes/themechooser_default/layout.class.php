@@ -9,11 +9,10 @@ class Layout {
 	 * turns the Page into HTML
 	 */
 	public function display_page(Page $page) {
-		global $config, $database;
-		$userprefs_test = new DatabasePrefs($database, 2); // yay! remove me when done.
+		global $config, $database, $userprefs;
 
 		$theme_name = $config->get_string('theme', 'default');
-		$theme_style = $userprefs_test->get_string('themechooser_theme','style.css');
+		$theme_style = $userprefs->get_string('themechooser_theme','style.css');
 		$data_href = get_base_href();
 		$contact_link = $config->get_string('contact_link');
 

@@ -173,12 +173,13 @@ class UserPrefsSetup extends SimpleExtension {
 
 	public function onPageRequest($event) {
 		global $prefs_setup, $page, $user, $database;
-
+		$a = "hello world";
 		if($event->page_matches("preferences")) { // Ah-ha! Here's how we do it.
 			if($event->get_arg(0) == NULL) {
 				$this->theme->display_error($page, ";_;", "Can't view this page directly (for now.) go to /preferences/[userid]");
 			} else {
-				$user_id_preferences = int_escape($event->get_arg(0)); // Need this first.
+				$GLOBALS['uid-preferences'] = int_escape($event->get_arg(0)); // Need this first.
+				$user_id_preferences = $GLOBALS['uid-preferences'];
 				if($user->id != $user_id_preferences && !$user->is_admin()) { $this->theme->display_error($page, ";_;", "Who do you think you are?"); }
 				else {
 				if($user->is_anonymous()) {
@@ -187,7 +188,7 @@ class UserPrefsSetup extends SimpleExtension {
 						// The magic code:
 						$prefs_setup = new DatabasePrefs($database, $user_id_preferences);
 						if($event->get_arg(1) == "save") {
-							send_event(new PrefSaveEvent($prefs_setup));
+							send_event(new PrefSaveEvent($prefs_setup, $user_id_preferences));
 							$prefs_setup->save_prefs(NULL, $user_id_preferences);
 		
 							$page->set_mode("redirect");
@@ -220,7 +221,7 @@ class UserPrefsSetup extends SimpleExtension {
 	public function onPrefSave($event) {
 		global $prefs_setup;
 		global $user;
-		global $user_id_preferences;
+		$userid = $GLOBALS['uid-preferences'];
 		foreach($_POST as $_name => $junk) {
 			if(substr($_name, 0, 6) == "_type_") {
 				$name = substr($_name, 6);
@@ -238,15 +239,15 @@ class UserPrefsSetup extends SimpleExtension {
 						$value = str_replace('\r', '<br>', $value);
 						
 						$value = stripslashes($value);
-						$prefs_setup->set_string($name, $value, $user); 
+						$prefs_setup->set_string($name, $value, $userid); 
 						break;
-					case "int":    $prefs_setup->set_int($name, $value);    break;
-					case "bool":   $prefs_setup->set_bool($name, $value);   break;
-					case "array":  $prefs_setup->set_array($name, $value);  break;
+					case "int":    $prefs_setup->set_int($name, $value, $userid);    break;
+					case "bool":   $prefs_setup->set_bool($name, $value, $userid);   break;
+					case "array":  $prefs_setup->set_array($name, $value, $userid);  break;
 				}
 			}
 		}
-		log_warning("userprefs", "Preferences saved for user #$user_id_preferences");
+		log_warning("userprefs", "Preferences saved for user #$userid");
 	}
 
 	public function onUserBlockBuilding($event) {
