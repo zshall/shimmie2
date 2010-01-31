@@ -168,10 +168,8 @@ class DatabasePrefs extends BasePrefs {
 	/*
 	 * Load user preferences from a the database.
 	 */
-	public function DatabasePrefs($database) {
+	public function DatabasePrefs($database, $userid) {
 		$this->database = $database;
-		global $user;
-		$userid = $user->id;
 		$cached = $this->database->cache->get("user_prefs");
 		if($cached) {
 			$this->values = $cached;
