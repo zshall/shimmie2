@@ -8,7 +8,7 @@ interface UserPrefs {
 	 * so that the next time a page is loaded it will use the new
 	 * configuration
 	 */
-	public function save_prefs($name=null);
+	public function save_prefs($name=null, $uid=null); //Make it easy on ourselves... don't want to change this much at all.
 
 	/** @name set_*
 	 * Set a configuration option to a new value, regardless
@@ -183,17 +183,20 @@ class DatabasePrefs extends BasePrefs {
 	/*
 	 * Save the current values for the current user.
 	 */
-	public function save_prefs($name=null) {
-		global $user;
-		$userid = $user->id;
+	public function save_prefs($name=null, $uid=null) {
+		if($uid == NULL) {
+			die("argh no uid");
+			global $user;
+			$uid = $user->id;
+		}
 		if(is_null($name)) {
 			foreach($this->values as $name => $value) {
 				$this->save_prefs($name);
 			}
 		}
 		else {
-			$this->database->Execute("DELETE FROM user_prefs WHERE name = ? AND user_id = ?", array($name, $userid));
-			$this->database->Execute("INSERT INTO  `user_prefs` (  `user_id` ,  `name` ,  `value` ) VALUES ('$userid',  '$name',  '".$this->values[$name]."')");
+			$this->database->Execute("DELETE FROM user_prefs WHERE name = ? AND user_id = ?", array($name, $uid));
+			$this->database->Execute("INSERT INTO  `user_prefs` (  `user_id` ,  `name` ,  `value` ) VALUES ('$uid',  '$name',  '".$this->values[$name]."')");
 		}
 		$this->database->cache->delete("user_prefs");
 	}

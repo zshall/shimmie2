@@ -13,10 +13,10 @@
  * activated; new config options are in $_POST
  */
 class PrefSaveEvent extends Event {
-	var $userprefs;
+	var $prefs_setup;
 
-	public function PrefSaveEvent($userprefs) {
-		$this->userprefs = $userprefs;
+	public function PrefSaveEvent($prefs_setup) {
+		$this->prefs_setup = $prefs_setup;
 	}
 }
 // }}}
@@ -65,8 +65,8 @@ class PrefBlock extends Block {
 	}
 
 	public function add_text_option($name, $label=null) {
-		global $userprefs;
-		$val = html_escape($userprefs->get_string($name));
+		global $prefs_setup;
+		$val = html_escape($prefs_setup->get_string($name));
 		if(!is_null($label)) {
 			$this->body .= "<label for='$name'>$label</label>";
 		}
@@ -75,8 +75,8 @@ class PrefBlock extends Block {
 	}
 
 	public function add_longtext_option($name, $label=null) {
-		global $userprefs;
-		$val = html_escape($userprefs->get_string($name));
+		global $prefs_setup;
+		$val = html_escape($prefs_setup->get_string($name));
 		if(!is_null($label)) {
 			$this->body .= "<label for='$name'>$label</label>";
 		}
@@ -86,8 +86,8 @@ class PrefBlock extends Block {
 	}
 
 	public function add_bool_option($name, $label=null) {
-		global $userprefs;
-		$checked = $userprefs->get_bool($name) ? " checked" : "";
+		global $prefs_setup;
+		$checked = $prefs_setup->get_bool($name) ? " checked" : "";
 		if(!is_null($label)) {
 			$this->body .= "<label for='$name'>$label</label>";
 		}
@@ -96,14 +96,14 @@ class PrefBlock extends Block {
 	}
 
 //	public function add_hidden_option($name, $label=null) {
-//		global $userprefs;
-//		$val = $userprefs->get_string($name);
+//		global $prefs_setup;
+//		$val = $prefs_setup->get_string($name);
 //		$this->body .= "<input type='hidden' id='$name' name='$name' value='$val'>";
 //	}
 
 	public function add_int_option($name, $label=null) {
-		global $userprefs;
-		$val = html_escape($userprefs->get_string($name));
+		global $prefs_setup;
+		$val = html_escape($prefs_setup->get_string($name));
 		if(!is_null($label)) {
 			$this->body .= "<label for='$name'>$label</label>";
 		}
@@ -112,8 +112,8 @@ class PrefBlock extends Block {
 	}
 
 	public function add_shorthand_int_option($name, $label=null) {
-		global $userprefs;
-		$val = to_shorthand_int($userprefs->get_string($name));
+		global $prefs_setup;
+		$val = to_shorthand_int($prefs_setup->get_string($name));
 		if(!is_null($label)) {
 			$this->body .= "<label for='$name'>$label</label>";
 		}
@@ -122,8 +122,8 @@ class PrefBlock extends Block {
 	}
 
 	public function add_choice_option($name, $options, $label=null) {
-		global $userprefs;
-		$current = $userprefs->get_string($name);
+		global $prefs_setup;
+		$current = $prefs_setup->get_string($name);
 
 		if(!is_null($label)) {
 			$this->body .= "<label for='$name'>$label</label>";
@@ -141,8 +141,8 @@ class PrefBlock extends Block {
 	}
 
 	public function add_multichoice_option($name, $options, $label=null) {
-		global $userprefs;
-		$current = $userprefs->get_array($name);
+		global $prefs_setup;
+		$current = $prefs_setup->get_array($name);
 
 		if(!is_null($label)) {
 			$this->body .= "<label for='$name'>$label</label>";
@@ -164,38 +164,48 @@ class PrefBlock extends Block {
 
 class UserPrefsSetup extends SimpleExtension {
 /*	public function onInitExt($event) {
-		global $userprefs;
-		$userprefs->set_default_string("test_data", "Input something here");
-		$userprefs->set_default_string("test_data2", "And here");
-		$userprefs->set_default_bool("test_data3", true);
+		global $prefs_setup;
+		$prefs_setup->set_default_string("test_data", "Input something here");
+		$prefs_setup->set_default_string("test_data2", "And here");
+		$prefs_setup->set_default_bool("test_data3", true);
 	}*/ // Uncomment for debugging.
 	
 
 	public function onPageRequest($event) {
-		global $userprefs, $page, $user;
-		
-		if($event->page_matches("preferences")) { //TODO: let admins set anonymous preferences.
-			if($user->is_anonymous()) {
-				$this->theme->display_permission_denied($page);
-			} else {
-				if($event->get_arg(0) == "save") {
-					send_event(new PrefSaveEvent($userprefs));
-					$userprefs->save_prefs();
+		global $prefs_setup, $page, $user, $database;
 
-					$page->set_mode("redirect");
-					$page->set_redirect(make_link("preferences"));
-				}
-				else if($event->get_arg(0) == "advanced") {
-					//$this->theme->display_advanced($page, $userprefs->values); //Uncomment for debugging.
-					//The way I see it, regular users don't need advanced settings.
-				}
+		if($event->page_matches("preferences")) { // Ah-ha! Here's how we do it.
+			if($event->get_arg(0) == NULL) {
+				$this->theme->display_error($page, ";_;", "Can't view this page directly (for now.) go to /preferences/[userid]");
+			} else {
+				$user_id_preferences = int_escape($event->get_arg(0)); // Need this first.
+				if($user->id != $user_id_preferences && !$user->is_admin()) { $this->theme->display_error($page, ";_;", "Who do you think you are?"); }
 				else {
-					$panel = new PrefPanel();
-					send_event(new PrefBuildingEvent($panel));
-					$this->theme->display_page($page, $panel);
+				if($user->is_anonymous()) {
+					$this->theme->display_permission_denied($page);
+				} else {
+						// The magic code:
+						$prefs_setup = new DatabasePrefs($database, $user_id_preferences);
+						if($event->get_arg(1) == "save") {
+							send_event(new PrefSaveEvent($prefs_setup));
+							$prefs_setup->save_prefs(NULL, $user_id_preferences);
+		
+							$page->set_mode("redirect");
+							$page->set_redirect(make_link("preferences/$user_id_preferences"));
+						}
+						else if($event->get_arg(1) == "advanced") {
+							//$this->theme->display_advanced($page, $prefs_setup->values); //Uncomment for debugging.
+							//The way I see it, regular users don't need advanced settings.
+						}
+						else {
+							$panel = new PrefPanel();
+							send_event(new PrefBuildingEvent($panel));
+							$this->theme->display_page($page, $panel, $user_id_preferences);
+						}
+					}
 				}
 			}
-		}
+		}		
 	}
 
 /*	public function onPrefBuilding($event) { // To test
@@ -208,9 +218,9 @@ class UserPrefsSetup extends SimpleExtension {
 	}*/
 
 	public function onPrefSave($event) {
-		global $userprefs;
+		global $prefs_setup;
 		global $user;
-		$userid = $user->id;
+		global $user_id_preferences;
 		foreach($_POST as $_name => $junk) {
 			if(substr($_name, 0, 6) == "_type_") {
 				$name = substr($_name, 6);
@@ -228,20 +238,21 @@ class UserPrefsSetup extends SimpleExtension {
 						$value = str_replace('\r', '<br>', $value);
 						
 						$value = stripslashes($value);
-						$userprefs->set_string($name, $value); 
+						$prefs_setup->set_string($name, $value, $user); 
 						break;
-					case "int":    $userprefs->set_int($name, $value);    break;
-					case "bool":   $userprefs->set_bool($name, $value);   break;
-					case "array":  $userprefs->set_array($name, $value);  break;
+					case "int":    $prefs_setup->set_int($name, $value);    break;
+					case "bool":   $prefs_setup->set_bool($name, $value);   break;
+					case "array":  $prefs_setup->set_array($name, $value);  break;
 				}
 			}
 		}
-		log_warning("userprefs", "Preferences saved for user #$userid");
+		log_warning("userprefs", "Preferences saved for user #$user_id_preferences");
 	}
 
 	public function onUserBlockBuilding($event) {
 		global $user;
-			$event->add_link("Preferences", make_link("preferences"));
+		$userid = $user->id;
+			$event->add_link("Preferences", make_link("preferences/$userid"));
 	}
 }
 ?>

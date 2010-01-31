@@ -14,7 +14,7 @@ class UserPrefsSetupTheme extends Themelet {
 	 *
 	 * The page should wrap all the options in a form which links to preferences_save
 	 */
-	public function display_page(Page $page, PrefPanel $panel) {
+	public function display_page(Page $page, PrefPanel $panel, $userid) {
 		$prefblock_html1 = "";
 		$prefblock_html2 = "";
 
@@ -42,7 +42,7 @@ class UserPrefsSetupTheme extends Themelet {
 		}
 
 		$table = "
-			<form action='".make_link("preferences/save")."' method='POST'><table>
+			<form action='".make_link("preferences/$userid/save")."' method='POST'><table>
 			<tr><td>$prefblock_html1</td><td>$prefblock_html2</td></tr>
 			<tr><td colspan='2'><input type='submit' value='Save Settings'></td></tr>
 			</table></form>
@@ -50,7 +50,7 @@ class UserPrefsSetupTheme extends Themelet {
 
 		$page->set_title("User Preferences");
 		$page->set_heading("User Preferences");
-		$page->add_block(new Block("Navigation", $this->build_navigation(), "left", 0));
+		$page->add_block(new Block("Navigation", "hello world", "left", 0));
 		$page->add_block(new Block("Preferences", $table));
 	}
 
@@ -89,16 +89,8 @@ class UserPrefsSetupTheme extends Themelet {
 
 		$page->set_title("User Preferences");
 		$page->set_heading("User Preferences");
-		$page->add_block(new Block("Navigation", $this->build_navigation(), "left", 0));
+		$page->add_block(new Block("Navigation", "hello world", "left", 0));
 		$page->add_block(new Block("Preferences", $table));
-	}
-
-	protected function build_navigation() { return "";
-		return "
-			<a href='".make_link()."'>Index</a>
-		"; /*Uncomment for debugging. Regular users should use advanced settings.
-			<br><a href='http://redmine.shishnet.org/wiki/shimmie2/Settings'>Help</a>
-			<br><a href='".make_link("preferences/advanced")."'>Advanced</a>*/
 	}
 
 	protected function sb_to_html(PrefBlock $block) {
