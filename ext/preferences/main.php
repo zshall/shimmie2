@@ -176,7 +176,7 @@ class UserPrefsSetup extends SimpleExtension {
 		$a = "hello world";
 		if($event->page_matches("preferences")) { // Ah-ha! Here's how we do it.
 			if($event->get_arg(0) == NULL) {
-				$this->theme->display_error($page, ";_;", "Can't view this page directly (for now.) go to /preferences/[userid]");
+				$this->theme->display_error($page, ";_;", "Can't view this page directly (for now?) go to /preferences/[userid]");
 			} else {
 				$GLOBALS['uid-preferences'] = int_escape($event->get_arg(0)); // Need this first.
 				$user_id_preferences = $GLOBALS['uid-preferences'];

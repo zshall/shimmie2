@@ -50,7 +50,7 @@ class UserPrefsSetupTheme extends Themelet {
 
 		$page->set_title("User Preferences");
 		$page->set_heading("User Preferences");
-		$page->add_block(new Block("Navigation", "hello world", "left", 0));
+		$page->add_block(new Block("Navigation", "<a href='".make_link()."'>Index</a>", "left", 0));
 		$page->add_block(new Block("Preferences", $table));
 	}
 
