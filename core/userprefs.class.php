@@ -193,6 +193,7 @@ class DatabasePrefs extends BasePrefs {
 		}
 		else {
 			$this->database->Execute("DELETE FROM user_prefs WHERE name = ? AND user_id = ?", array($name, $uid));
+			$this->database->Execute('DELETE FROM user_prefs WHERE user_id = "0"'); // Hack... O_o
 			$this->database->Execute("INSERT INTO  `user_prefs` (  `user_id` ,  `name` ,  `value` ) VALUES ('$uid',  '$name',  '".$this->values[$name]."')");
 		}
 		$this->database->cache->delete("user_prefs");

@@ -67,6 +67,7 @@ class PrefBlock extends Block {
 	public function add_text_option($name, $label=null) {
 		global $prefs_setup;
 		$val = html_escape($prefs_setup->get_string($name));
+		$val = htmlspecialchars_decode($val); // Prevent snowballing.
 		if(!is_null($label)) {
 			$this->body .= "<label for='$name'>$label</label>";
 		}
@@ -77,6 +78,7 @@ class PrefBlock extends Block {
 	public function add_longtext_option($name, $label=null) {
 		global $prefs_setup;
 		$val = html_escape($prefs_setup->get_string($name));
+		$val = htmlspecialchars_decode($val); // Prevent snowballing.
 		if(!is_null($label)) {
 			$this->body .= "<label for='$name'>$label</label>";
 		}
@@ -173,7 +175,6 @@ class UserPrefsSetup extends SimpleExtension {
 
 	public function onPageRequest($event) {
 		global $prefs_setup, $page, $user, $database;
-		$a = "hello world";
 		if($event->page_matches("preferences")) { // Ah-ha! Here's how we do it.
 			if($event->get_arg(0) == NULL) {
 				$this->theme->display_error($page, ";_;", "Can't view this page directly (for now?) go to /preferences/[userid]");
