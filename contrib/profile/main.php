@@ -46,45 +46,9 @@ class Profile extends SimpleExtension {
 		$pb->add_longtext_option("profile_aboutme","<br />About me (no HTML)");
 		$event->panel->add_block($pb);
 	}
-/*	public function onPageRequest($event) {
-		global $page;
-		if($event->page_matches("profile")) {
-			$body = $this->page_body();
-			$this->theme->display_page($page, $body);
-		}
-	}
-*//*	public function onUserBlockBuilding($event) {
-		global $user;
-			$event->add_link("My Profile", make_link("profile"));
-	} // Let's try going without this.*/
-	// Show a chart of who liked what ice cream better.
-/*	private function page_body() {
-		global $database;
-		global $config;
-		$base_href = $config->get_string('base_href');
-		$data_href = get_base_href();
-		
-		$vanilla = ceil($database->db->GetOne('SELECT COUNT(*) FROM `user_prefs` WHERE (`name` = "testprefs_icecream" AND `value` = "vanilla")'));
-		$v = "$vanilla";
-		
-		$chocolate = ceil($database->db->GetOne('SELECT COUNT(*) FROM `user_prefs` WHERE (`name` = "testprefs_icecream" AND `value` = "chocolate")'));
-		$c = "$chocolate";
-		
-		$strawberry = ceil($database->db->GetOne('SELECT COUNT(*) FROM `user_prefs` WHERE (`name` = "testprefs_icecream" AND `value` = "strawberry")'));
-		$s = "$strawberry";
-		
-		$none = ceil($database->db->GetOne('SELECT COUNT(*) FROM `user_prefs` WHERE (`name` = "testprefs_icecream" AND `value` = "none")'));
-		$n = "$none";
-		
-		$body = "<h1>Results:</h1>";
-		$body .= "<p>Who liked what flavor of ice cream the best?</p>";
-		$body .= "<img src='".$data_href."/ext/testprefs/piechart.php?data=$v*$c*$s*$n&label=Vanilla*Chocolate*Strawberry*No%20Preference' />";
-		return $body;
-	}
-*/
 	public function onUserPageBuilding(Event $event) { // This function appears to work.
 		global $database, $user;
-		$pi = new DatabasePrefs($database, $user->id); // change this to work with /user/whoever
+		$pi = new DatabasePrefs($database, $event->display_user->id); // testing...
 		$realname = $pi->get_string("profile_name","No real name given");
 		$age = $pi->get_int("profile_age", "Too many");
 		$web = $pi->get_string("profile_website");
