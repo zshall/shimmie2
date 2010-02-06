@@ -49,6 +49,10 @@ class Image {
 				$this->$name = $value; // hax
 			}
 			$this->posted_timestamp = strtotime($this->posted); // pray
+
+			assert(is_numeric($this->id));
+			assert(is_numeric($this->height));
+			assert(is_numeric($this->width));
 		}
 	}
 
@@ -128,7 +132,18 @@ class Image {
 		assert(is_array($tags));
 		global $database;
 		if(count($tags) == 0) {
-			return $database->db->GetOne("SELECT COUNT(*) FROM images");
+			#return $database->db->GetOne("SELECT COUNT(*) FROM images");
+			$total = $database->cache->get("image-count");
+			if(!$total) {
+				$total = $database->db->GetOne("SELECT COUNT(*) FROM images");
+				$database->cache->set("image-count", $total, 600);
+			}
+			return $total;
+		}
+		else if(count($tags) == 1 && !preg_match("/[:=><]/", $tags[0])) {
+			return $database->db->GetOne(
+				$database->engine->scoreql_to_sql("SELECT count FROM tags WHERE SCORE_STRNORM(tag) = SCORE_STRNORM(?)"),
+				$tags);
 		}
 		else {
 			$querylet = Image::build_search_querylet($tags);
@@ -297,10 +312,7 @@ class Image {
 	 * @retval string
 	 */
 	public function get_image_filename() {
-		$hash = $this->hash;
-		$ab = substr($hash, 0, 2);
-		$ext = $this->ext;
-		return "images/$ab/$hash";
+		return warehouse_path("images", $this->hash);
 	}
 
 	/**
@@ -309,9 +321,7 @@ class Image {
 	 * @retval string
 	 */
 	public function get_thumb_filename() {
-		$hash = $this->hash;
-		$ab = substr($hash, 0, 2);
-		return "thumbs/$ab/$hash";
+		return warehouse_path("thumbs", $this->hash);
 	}
 
 	/**
@@ -390,7 +400,9 @@ class Image {
 		// insert each new tags
 		foreach($tags as $tag) {
 			$id = $database->db->GetOne(
-					"SELECT id FROM tags WHERE tag = ?",
+					$database->engine->scoreql_to_sql(
+						"SELECT id FROM tags WHERE SCORE_STRNORM(tag) = SCORE_STRNORM(?)"
+					),
 					array($tag));
 			if(empty($id)) {
 				// a new tag
@@ -409,7 +421,9 @@ class Image {
 						array($this->id, $id));
 			}
 			$database->execute(
-					"UPDATE tags SET count = count + 1 WHERE tag = ?",
+					$database->engine->scoreql_to_sql(
+						"UPDATE tags SET count = count + 1 WHERE SCORE_STRNORM(tag) = SCORE_STRNORM(?)"
+					),
 					array($tag));
 		}
 
@@ -552,11 +566,11 @@ class Image {
 
 		// one positive tag (a common case), do an optimised search
 		else if(count($tag_querylets) == 1 && $tag_querylets[0]->positive) {
-			$query = new Querylet("
+			$query = new Querylet($database->engine->scoreql_to_sql("
 				SELECT images.* FROM images
 				JOIN image_tags ON images.id = image_tags.image_id
-				WHERE tag_id = (SELECT tags.id FROM tags WHERE tag = ?)
-				", array($tag_querylets[0]->tag));
+				WHERE tag_id = (SELECT tags.id FROM tags WHERE SCORE_STRNORM(tag) = SCORE_STRNORM(?))
+				"), array($tag_querylets[0]->tag));
 
 			if(strlen($img_search->sql) > 0) {
 				$query->append_sql(" AND ");
@@ -571,7 +585,11 @@ class Image {
 			$tags_ok = true;
 
 			foreach($tag_querylets as $tq) {
-				$tag_ids = $database->db->GetCol("SELECT id FROM tags WHERE tag = ?", array($tq->tag));
+				$tag_ids = $database->db->GetCol(
+						$database->engine->scoreql_to_sql(
+							"SELECT id FROM tags WHERE SCORE_STRNORM(tag) = SCORE_STRNORM(?)"
+						),
+						array($tq->tag));
 				if($tq->positive) {
 					$positive_tag_id_array = array_merge($positive_tag_id_array, $tag_ids);
 					$tags_ok = count($tag_ids) > 0;
@@ -897,10 +915,9 @@ class Tag {
  * heirachy, or throw an exception trying
  */
 function move_upload_to_archive($event) {
-	$hash = $event->hash;
-	$ha = substr($hash, 0, 2);
-	if(!@copy($event->tmpname, "images/$ha/$hash")) {
-		throw new UploadException("Failed to copy file from uploads ({$event->tmpname}) to archive (images/$ha/$hash)");
+	$target = warehouse_path("images", $event->hash);
+	if(!@copy($event->tmpname, $target)) {
+		throw new UploadException("Failed to copy file from uploads ({$event->tmpname}) to archive ($target)");
 		return false;
 	}
 	return true;

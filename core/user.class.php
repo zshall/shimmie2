@@ -39,10 +39,13 @@ class User {
 
 	public static function by_session($name, $session) {
 		global $config, $database;
-		$row = $database->get_row(
-				"SELECT * FROM users WHERE name = ? AND md5(concat(pass, ?)) = ?",
-				array($name, get_session_ip($config), $session)
-		);
+		if($database->engine->name == "mysql") {
+			$query = "SELECT * FROM users WHERE name = ? AND md5(concat(pass, ?)) = ?";
+		}
+		else {
+			$query = "SELECT * FROM users WHERE name = ? AND md5(pass || ?) = ?";
+		}
+		$row = $database->get_row($query, array($name, get_session_ip($config), $session));
 		return is_null($row) ? null : new User($row);
 	}
 
@@ -142,7 +145,7 @@ class User {
 		if($config->get_string("avatar_host") == "gravatar") {
 			if(!empty($this->email)) {
 				$hash = md5(strtolower($this->email));
-				$args = $config->get_string("avatar_gravatar_type").$config->get_string("avatar_gravatar_rating");
+				$args = $config->get_string("avatar_gravatar_options");
 				return "<img class=\"avatar gravatar\" src=\"http://www.gravatar.com/avatar/$hash.jpg?$args\">";
 			}
 		}
