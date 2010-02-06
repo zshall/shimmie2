@@ -11,6 +11,20 @@
  *				different parts of the day, and thus it helps me to keep organized. TODO: consolidate this into one app.
  *
  *				Prereqs: userprefs class
+ *
+ *				Development TODO:
+ *					+ Calculate values on ImageUploadEvent, CommentPostingEvent, Tag... something
+ *					+ Punishment system
+ *						- Add punishment points on ImageDeletionEvent, CommentDeletionEvent
+ *						- "Slap" button on user profile (UserPageBuildingEvent)
+ *						- Edit slap points on preferences page if admin
+ *					+ Figure out a way to do influence points properly
+ *						- Either have a percent of (user's total / (total - admins))
+ *						- Or have a percentile system (how do I do this?)
+ *					+ Custom ranks system
+ *						- Editor
+ *						- Table in database
+ *						- STORE ALL VALUES, not just user_level. Name them user_level_c and user_level_i and stuff.
  */
  
 class User_Levels_Base extends SimpleExtension {
@@ -109,7 +123,7 @@ class User_Levels_Base extends SimpleExtension {
 		$config->set_default_bool("user_level_custom", false);	// Turning off custom ranks for now.
 		
 		/**
-		I can't think of a better place to put this, so I'm adding it on here.
+		TODO: move this to private function, call on ImageUploadEvent, CommentPostingEvent, etc.
 		The extension will now get the options that have been set, and implement them.
 		**/
 		global $user, $database;
