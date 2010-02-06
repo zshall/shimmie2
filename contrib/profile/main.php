@@ -48,7 +48,7 @@ class Profile extends SimpleExtension {
 	}
 	public function onUserPageBuilding(Event $event) { // This function appears to work.
 		global $database, $user;
-		$pi = new DatabasePrefs($database, $event->display_user->id); // testing...
+		$pi = new DatabasePrefs($database, $event->display_user->id); // YAY! Works!
 		$realname = $pi->get_string("profile_name","No real name given");
 		$age = $pi->get_int("profile_age", "Too many");
 		$web = $pi->get_string("profile_website");

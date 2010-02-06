@@ -184,7 +184,6 @@ class DatabasePrefs extends BasePrefs {
 	 * Save the current values for the current user.
 	 */
 	public function save_prefs($name=null, $uid=null) {
-		echo $uid;
 
 		if(is_null($name)) {
 			foreach($this->values as $name => $value) {
