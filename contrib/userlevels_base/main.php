@@ -30,7 +30,7 @@
  
 class User_Levels_Base extends SimpleExtension {
 	/**
-	 * This class handles invisible functions related to setting and generating the user level.
+	 * This section handles invisible functions, such as getting and setting the user level.
 	**/
 	
 	private function get_user_level($userid) {
@@ -56,7 +56,8 @@ class User_Levels_Base extends SimpleExtension {
 		// Get count of tags by user (if tag history is enabled)
 		$t = 0;
 		if(class_exists("Tag_History")) {
-			$level_u_t = ceil($database->db->GetOne('SELECT COUNT(*) FROM `tag_histories` WHERE (`user_id` = "'.$userid.'")'));
+			// Prevent cheating:
+			$level_u_t = ceil($database->db->GetOne('SELECT COUNT(DISTINCT `image_id`) FROM `tag_histories` WHERE (`user_id` = '.$userid.')'));
 			$t = "$level_u_t";
 		}
 		
@@ -198,17 +199,86 @@ class User_Levels_Base extends SimpleExtension {
 		TODO: Create a database table that is like this.
 		**/
 		global $config;
-		$config->set_default_int("user_level_m_p", 1);	// Multiplier for posts
-		$config->set_default_int("user_level_m_c", 1);	// Multiplier for comments
+		$config->set_default_int("user_level_m_p", 3);	// Multiplier for posts
+		$config->set_default_int("user_level_m_c", 2);	// Multiplier for comments
 		$config->set_default_int("user_level_m_t", 1);	// Multiplier for tags
-		$config->set_default_int("user_level_m_s", 3);	// Multiplier for slaps (negative points)
+		$config->set_default_int("user_level_m_s", 8);	// Multiplier for slaps (negative points)
+		
+		$this->set_user_level(); // Debugging.
 	}
 }
+
 
 class User_Levels_Config extends SimpleExtension {
 	/**
 	 * This class handles configuration of the User_Levels system.
 	**/
-	// TODO: Create a setupblock for multipliers.
+	
+	public function onSetupBuilding($event) {
+		$sb = new SetupBlock("User Levels");
+		$sb->add_label("<i>Multipliers</i>");
+		$sb->add_label("<br />(Encourage some things more than others)");
+		$sb->add_int_option("user_level_m_p", "<br />Post Multiplier: ");
+		$sb->add_int_option("user_level_m_c", "<br />Comment Multiplier: ");
+		$sb->add_int_option("user_level_m_t", "<br />Tag Multiplier: ");
+		$sb->add_int_option("user_level_m_s", "<br />Slap Multiplier: ");
+		$event->panel->add_block($sb);
+	}
+	/**
+	 * When we view the user's prefrerences page, if we are admin, show the levels (not really to be set, but for observation.)
+	 */
+	public function onPrefBuilding($event) {
+		global $user, $config;
+		if($user->is_admin()) {
+			$pb = new PrefBlock("User Level");
+			$pb->add_label("<i>Changable fields</i>");
+			$pb->add_int_option("user_level_s", "<br />Punishment points: ");
+			$ms = $config->get_int("user_level_m_s");
+			$pb->add_label(" * ".$ms);
+			
+			$pb->add_label("<br /><i>Unchangable stats (for viewing)</i>");
+			
+			$pb->add_label("<br />Points (with multipliers applied)");
+			$pb->add_int_option("user_level_c_p", "<br />Post points");
+			$pb->add_int_option("user_level_c_c", "<br />Comment points");
+			$pb->add_int_option("user_level_c_t", "<br />Tag points");
+			
+			$pb->add_int_option("user_level_c_total", "<br />Total points");
+			$event->panel->add_block($pb);
+		}
+	}		
+}
+
+
+class User_Levels_Profile extends SimpleExtension {
+	/**
+	 * This section puts the user's level on their profile.
+	 *
+	 * TODO: Get custom ranks and titles.
+	**/
+	
+	public function onUserPageBuilding(Event $event) {
+		global $database, $user, $page;
+		$ul = new DatabasePrefs($database, $event->display_user->id);
+		$user_level_total = $ul->get_int("user_level_c_total",0);
+		$page->add_block(new Block('User Level','Total user level: '.$user_level_total.'.'));
+	}
+}
+
+
+class User_Levels_Punishment extends SimpleExtension {	
+	/**
+	 * This section deals with the punishment system.
+	**/
+	
+	public function onUserPageBuilding(Event $event) {
+		/**
+		 * When we view the user's profile page, if we are admin, display a "slap" button.
+		 */
+		global $user, $page;
+		if($user->is_admin()) {
+			$page->add_block(new Block("Punish User", "If a user is misbehaving, click this button to slap sense into him/her."));
+		}
+	}
 }
 ?>
