@@ -18,7 +18,7 @@
 class User_Levels_Base extends SimpleExtension {
 	/**
 	 * This section handles invisible functions, such as getting and setting the user level.
-	**/
+	 */
 	
 	private function get_user_level($userid) {
 		/**
@@ -100,13 +100,13 @@ class User_Levels_Base extends SimpleExtension {
 		return $level;
 	}
 	
-	private function set_user_level() {
+	private function set_user_level($userid) {
 		/**
-		TODO: call on ImageUploadEvent, CommentPostingEvent, etc.
+		Userid is now passed on to this by whatever function is calling it. Makes it more portable.
 		The extension will now get the options that have been set, and implement them.
 		**/
-		global $user, $database;
-		$userid = $user->id;
+		global $database;
+		
 		// Now that we have all the preliminaries, get the big array of levels and ranks.
 		$level = $this->get_user_level($userid);
 		/** REMINDER ******************
@@ -143,16 +143,33 @@ class User_Levels_Base extends SimpleExtension {
 	
 	// onEvents go here.
 	
+	public function onUserLevelsPunishment(Event $event) {
+		if(isset($GLOBALS['punish_user_id'])) {$this->set_user_level($GLOBALS['punish_user_id']);}
+	}
+	
+	public function onPrefSave(Event $event) {
+		if(isset($GLOBALS['uid-preferences'])) {
+			$userid = $GLOBALS['uid-preferences'];
+			$this->set_user_level($userid);
+		}
+	}
+	
 	public function onImageUpload(Event $event) {
-		$this->set_user_level();
+		global $user;
+		$userid = $user->id;
+		$this->set_user_level($userid);
 	}
 	
 	public function onCommentPosting(Event $event) {
-		$this->set_user_level();
+		global $user;
+		$userid = $user->id;
+		$this->set_user_level($userid);
 	}
 	
 	public function onTagSet(Event $event) {
-		$this->set_user_level();
+		global $user;
+		$userid = $user->id;
+		$this->set_user_level($userid);
 	}
 	
 	public function onInitExt(Event $event) {
@@ -191,7 +208,9 @@ class User_Levels_Base extends SimpleExtension {
 		$config->set_default_int("user_level_m_t", 1);	// Multiplier for tags
 		$config->set_default_int("user_level_m_s", 8);	// Multiplier for slaps (negative points)
 		
-		$this->set_user_level(); // Debugging.
+		//global $user;
+		//$userid = $user->id;
+		//$this->set_user_level($userid);
 	}
 }
 
@@ -199,7 +218,7 @@ class User_Levels_Base extends SimpleExtension {
 class User_Levels_Config extends SimpleExtension {
 	/**
 	 * This class handles configuration of the User_Levels system.
-	**/
+	 */
 	
 	public function onSetupBuilding($event) {
 		$sb = new SetupBlock("User Levels");
@@ -242,7 +261,7 @@ class User_Levels_Profile extends SimpleExtension {
 	 * This section puts the user's level on their profile.
 	 *
 	 * TODO: Get custom ranks and titles.
-	**/
+	 */
 	
 	public function onUserPageBuilding(Event $event) {
 		global $database, $user, $page;
@@ -252,20 +271,100 @@ class User_Levels_Profile extends SimpleExtension {
 	}
 }
 
+class UserLevelsPunishmentEvent extends Event {}
 
 class User_Levels_Punishment extends SimpleExtension {	
 	/**
 	 * This section deals with the punishment system.
-	**/
+	 */
+	
+	private function slap_user($userid, $points=null) {
+		/**
+		 * Slap function.
+		 */
+		//Don't let these errors mess us up.
+		if($userid==NULL) { die('No userid.'); }
+		if($points==NULL) { $points = 1; }
+		global $database, $page;
+		// Start a user_prefs with data for the current user.
+			$prefs_user_level_slap = new DatabasePrefs($database, $userid);
+		// Get the current value of punishment
+			$current_punishment_level = $prefs_user_level_slap->get_int("user_level_s");
+		// Increase this number by $points
+			$new_punishment_level = $current_punishment_level + $points;
+		// Save the new value of punishment
+			$prefs_user_level_slap->set_int("user_level_s", $new_punishment_level, $userid);
+	}
 	
 	public function onUserPageBuilding(Event $event) {
 		/**
 		 * When we view the user's profile page, if we are admin, display a "slap" button.
 		 */
-		global $user, $page;
+		global $user, $page, $config;
 		if($user->is_admin()) {
-			$page->add_block(new Block("Punish User", "If a user is misbehaving, click this button to slap sense into him/her."));
+			$uid = $event->display_user->id;
+			$un = $event->display_user->name;
+			$ms = $config->get_int("user_level_m_s");
+			$page->add_block(new Block("Punish User", "
+				If a user is misbehaving, click this button to slap sense into him/her.<br />
+				<form action='".make_link("user_levels/slap")."' method='POST'>
+				Hate level: <input type='text' name='points' size='5' style='text-align:center;'> * $ms<br />
+				<input type='hidden' name='user_name' value='$un'>
+				<input type='hidden' name='user_id' value='$uid'>
+				<input type='submit' value='Slap'>
+				</form>
+			"));
 		}
 	}
+	
+	public function onPageRequest(Event $event) {
+		/**
+		 * The second part of the punishment form...
+		 */
+		global $user, $page;
+		if($user->is_admin()) {
+			if($event->page_matches("user_levels/slap")) {
+				if(isset($_POST['user_id']) && isset($_POST['user_name']) && isset($_POST['points'])) {
+					if($_POST['points'] > 0) {
+						$this->slap_user($_POST['user_id'], $_POST['points']);
+						$GLOBALS['punish_user_id'] = $_POST['user_id'];
+						send_event(new UserLevelsPunishmentEvent());
+						$page->set_mode("redirect");
+						$page->set_redirect(make_link("user/{$_POST['user_name']}"));
+					} else { die("Error: did you enter a number greater than 1?"); }
+				} else { die("Error: did you submit the form?"); }
+			}
+		} else { die("Error: must be admin"); }
+	}
+	
+	// onEvents go here.
+	
+	public function onCommentDeletion(Event $event) {
+		/**
+		 * Slaps a user with 1 un-multiplied point when a comment of theirs needs to be deleted.
+		 * Looks like I'm only provided the comment id, not the ID of the user who posted it.
+		 * Oh well, time to break out the database.
+		 *
+		 * FIXME: We can't select the owner_id... after the comment has been deleted. Argh.
+		global $database;
+		$userid = $database->get_row("SELECT owner_id FROM comments WHERE id = ?", array($event->comment_id));
+		$GLOBALS['punish_user_id'] = $userid;
+        $this->slap_user($userid,1);
+		send_event(new UserLevelsPunishmentEvent());
+		
+		*/
+	}
+
+	public function onImageDeletion($event) {
+		/**
+		 * Slaps a user with 1 un-multiplied point when an image of theirs needs to be deleted.
+		 */
+		global $database;
+		$userid = $event->image->owner_id;
+		$GLOBALS['punish_user_id'] = $userid;
+		$this->slap_user($userid,1);
+		send_event(new UserLevelsPunishmentEvent());
+	}
+
 }
 ?>
