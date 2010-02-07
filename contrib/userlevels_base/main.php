@@ -245,11 +245,11 @@ class User_Levels_Config extends SimpleExtension {
 			$pb->add_label("<br /><i>Unchangable stats (for viewing)</i>");
 			
 			$pb->add_label("<br />Points (with multipliers applied)");
-			$pb->add_int_option("user_level_c_p", "<br />Post points");
-			$pb->add_int_option("user_level_c_c", "<br />Comment points");
-			$pb->add_int_option("user_level_c_t", "<br />Tag points");
+			$pb->add_int_option("user_level_c_p", "<br />Post points", true);
+			$pb->add_int_option("user_level_c_c", "<br />Comment points", true);
+			$pb->add_int_option("user_level_c_t", "<br />Tag points", true);
 			
-			$pb->add_int_option("user_level_c_total", "<br />Total points");
+			$pb->add_int_option("user_level_c_total", "<br />Total points", true);
 			$event->panel->add_block($pb);
 		}
 	}		
