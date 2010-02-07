@@ -12,20 +12,7 @@
  *
  *				Prereqs: userprefs class
  *
- *				Development TODO:
- *					+ Calculate values on ImageUploadEvent, CommentPostingEvent, Tag... something
- *					+ Punishment system
- *						- Add punishment points on ImageDeletionEvent, CommentDeletionEvent
- *						- "Slap" button on user profile (UserPageBuildingEvent)
- *						- Edit slap points on preferences page if admin
- *					+ Figure out a way to do influence points properly (disabled for now)
- *						- Either have a percent of (user's total / (total - admins))
- *						- Or have a percentile system (how do I do this?)
- *						- Updating it?! I see why Shish assigned the ranks system to 3.0... very confusing stuff that seems simple.
- *					+ Custom ranks system
- *						- Editor
- *						- Table in database
- *						- STORE ALL VALUES, not just user_level. Name them user_level_c and user_level_i and stuff.
+ *				Development TODO now at http://github.com/zshall/shimmie2/issues
  */
  
 class User_Levels_Base extends SimpleExtension {
