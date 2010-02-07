@@ -103,13 +103,15 @@ class PrefBlock extends Block {
 //		$this->body .= "<input type='hidden' id='$name' name='$name' value='$val'>";
 //	}
 
-	public function add_int_option($name, $label=null) {
+	public function add_int_option($name, $label=null, $disabled=null) {
 		global $prefs_setup;
 		$val = html_escape($prefs_setup->get_string($name));
 		if(!is_null($label)) {
 			$this->body .= "<label for='$name'>$label</label>";
 		}
-		$this->body .= "<input type='text' id='$name' name='_userprefs_$name' value='$val' size='4' style='text-align: center;'>\n";
+		$dt = "";
+		if($disabled==true) { $dt = "readonly='true' disabled='true'"; }
+		$this->body .= "<input type='text' id='$name' name='_userprefs_$name' value='$val' size='4' style='text-align: center;' $dt>\n";
 		$this->body .= "<input type='hidden' name='_type_$name' value='int'>\n";
 	}
 
