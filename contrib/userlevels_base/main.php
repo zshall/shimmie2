@@ -1,9 +1,9 @@
 <?php
 /*
- * Name: User Levels Base
+ * Name: User Levels
  * Author: Zach Hall <zach@sosguy.net> [http://seemslegit.com/]
  * License: GPLv2
- * Description: User Incentive System Base
+ * Description: User Incentive System (with extensive documentation)
  *				Counts up all the posts, comments, and tags a user has made and stores
  *				in the database as a level. Expands on the tiny library of userprefs extensions.
  *
@@ -18,9 +18,10 @@
  *						- Add punishment points on ImageDeletionEvent, CommentDeletionEvent
  *						- "Slap" button on user profile (UserPageBuildingEvent)
  *						- Edit slap points on preferences page if admin
- *					+ Figure out a way to do influence points properly
+ *					+ Figure out a way to do influence points properly (disabled for now)
  *						- Either have a percent of (user's total / (total - admins))
  *						- Or have a percentile system (how do I do this?)
+ *						- Updating it?! I see why Shish assigned the ranks system to 3.0... very confusing stuff that seems simple.
  *					+ Custom ranks system
  *						- Editor
  *						- Table in database
@@ -28,59 +29,142 @@
  */
  
 class User_Levels_Base extends SimpleExtension {
+	/**
+	 * This class handles invisible functions related to setting and generating the user level.
+	**/
 	
-	private function get_user_level($userid, $mode, $custom) {
+	private function get_user_level($userid) {
 		/**
 		This simple function generates the specified user level and returns it.
 		I'll need to decide sometime on what it actually does. :\
 		
 		Parameters:
 			$userid		[]				: The ID of the user we want to work with
-			$mode		default=c		: "Contribution" or "Influence" mode... which should be generated?
-			$custom		default=false	: If this is true, we'll return everything separately (4-5 different variables)
-													 false, we'll combine the results and return 1 variable
+		
+		Custom and mode won't matter... we'll just return everything in an array ^_^
 		**/
 		global $database;
 		
 		// Get count of posts by user
-		$level_mode_c_p = ceil($database->db->GetOne('SELECT COUNT(*) FROM `images` WHERE (`owner_id` = "'.$userid.'")'));
-		$p = "$level_mode_c_p";
+		$level_u_p = ceil($database->db->GetOne('SELECT COUNT(*) FROM `images` WHERE (`owner_id` = "'.$userid.'")'));
+		$p = "$level_u_p";
 		
 		// Get count of comments by user
-		$level_mode_c_c = ceil($database->db->GetOne('SELECT COUNT(*) FROM `comments` WHERE (`owner_id` = "'.$userid.'")'));
-		$c = "$level_mode_c_c";
+		$level_u_c = ceil($database->db->GetOne('SELECT COUNT(*) FROM `comments` WHERE (`owner_id` = "'.$userid.'")'));
+		$c = "$level_u_c";
 		
-		// Get count of tags (if tag history is enabled)
+		// Get count of tags by user (if tag history is enabled)
 		$t = 0;
 		if(class_exists("Tag_History")) {
-			$level_mode_c_t = ceil($database->db->GetOne('SELECT COUNT(*) FROM `tag_histories` WHERE (`user_id` = "'.$userid.'")'));
-			$t = "$level_mode_c_t";
+			$level_u_t = ceil($database->db->GetOne('SELECT COUNT(*) FROM `tag_histories` WHERE (`user_id` = "'.$userid.'")'));
+			$t = "$level_u_t";
 		}
 		
-/*		// Get count of referrals (completely leaving this out for now, as it doesn't even exist, and might not ever exist.)
-		$r = 0;
-		if(class_exists("Referrals")) {
-			$level_mode_c_r = ceil($database->db->GetOne('SELECT COUNT(*) FROM `user_prefs` WHERE (`name` = "testprefs_icecream" AND `value` = "none")'));
-			$r = "$level_mode_c_r";
+/*		// Get count of posts overall (TODO: exclude admins)
+		$level_t_p = ceil($database->db->GetOne('SELECT COUNT(*) FROM `images`'));
+		$tp = "$level_t_p";
+		
+		// Get count of comments overall (TODO: exclude admins)
+		$level_t_c = ceil($database->db->GetOne('SELECT COUNT(*) FROM `comments`'));
+		$tc = "$level_t_c";
+		
+		// Get count of tags overall (if tag history is enabled) (TODO: exclude admins)
+		$tt = 0;
+		if(class_exists("Tag_History")) {
+			$level_t_t = ceil($database->db->GetOne('SELECT COUNT(*) FROM `tag_histories`'));
+			$tt = "$level_t_t";
 		}*/
 		
-		$level = 0;
-		switch($mode) {
-			case 'c':
-				if($custom==false) {
-					$level_mode_c = $p + $c + $t;
-					return $level_mode_c;
-				} else { // TODO: This next part I'm not so confident about. Untested, and won't be for a while. Oh dear.
-					$level_mode_c['p'] = $p;
-					$level_mode_c['c'] = $c;
-					$level_mode_c['t'] = $t;
-					return $level_mode_c;
-				}
-				break;
-			case 'i':
-				// TODO: figure out influence mode.
-				break;
+		// Let's generate a lot of numbers then. First, get multipliers.
+		global $config;
+		$mp = $config->get_int("user_level_m_p");
+		$mc = $config->get_int("user_level_m_c");
+		$mt = $config->get_int("user_level_m_t");
+		$ms = $config->get_int("user_level_m_s");
+		
+		// Get punishment values
+		$prefs_user_level_slap = new DatabasePrefs($database, $userid);
+		$us = $prefs_user_level_slap->get_int("user_level_s");
+		$level['bad'] = $us * $ms;
+		
+		// Now, contribution points
+		$level['c_p'] = $p * $mp;		// Post count
+		$level['c_c'] = $c * $mc;		// Comment count
+		$level['c_t'] = $t * $mt;		// Tag count
+		
+		// Generate total contribution point level
+		$level['c_total'] = ($level['c_p'] + $level['c_c'] + $level['c_t']) - $level['bad'];
+		
+/*		// Influence points are going to be extremely tough to generate actually, as when one person's influence increases, another's influence decreases.
+		// To spare us the trouble right now, I'll leave it out.
+		if($tp > 0) { $level['i_p'] = $p / $tp; } else { $level['i_p'] = 0; } // Influence on posts
+		if($tc > 0) { $level['i_c'] = $c / $tc; } else { $level['i_c'] = 0; } // Influence on comments
+		if($tt > 0) { $level['i_t'] = $t / $tt;	} else { $level['i_t'] = 0; } // Influence on tags
+		
+		// Finally, generate total influence points mode.
+		if($tp==0 && $tc==0 && $tt==0) {
+			$level['i_total'] = 0;
+		} else {
+			$level['i_total'] = ($p + $c + $t) / ($tp + $tc + $tt); 
 		}
+*/	
+		// We are done! Returning generated values as a big array ^_^
+		return $level;
+	}
+	
+	private function set_user_level() {
+		/**
+		TODO: call on ImageUploadEvent, CommentPostingEvent, etc.
+		The extension will now get the options that have been set, and implement them.
+		**/
+		global $user, $database;
+		$userid = $user->id;
+		// Now that we have all the preliminaries, get the big array of levels and ranks.
+		$level = $this->get_user_level($userid);
+		/** REMINDER ******************
+		 * What variables do we have?
+		 * 		$level['c_p']
+		 *		$level['c_c']
+		 *		$level['c_t']
+		 *
+		 *		$level['i_p']@
+		 *		$level['i_c']@
+		 *		$level['i_t']@
+		 *
+		 *		$level['c_total']
+		 *		$level['i_total']@
+		 *
+		 *		$level['bad']
+		 * @ Disabled for now.
+		*******************************/
+		
+		// Let's store all these in the preferences. This won't be changable by the user, but will be good for admins later in development.
+		$prefs_user_level = new DatabasePrefs($database, $userid);
+		
+		$prefs_user_level->set_int("user_level_c_p",$level['c_p'], $userid);
+		$prefs_user_level->set_int("user_level_c_c",$level['c_c'], $userid);
+		$prefs_user_level->set_int("user_level_c_t",$level['c_t'], $userid);
+		
+/*		$prefs_user_level->set_int("user_level_i_p",$level['i_p'], $userid);
+		$prefs_user_level->set_int("user_level_i_c",$level['i_c'], $userid);
+		$prefs_user_level->set_int("user_level_i_t",$level['i_t'], $userid);*/
+		
+		$prefs_user_level->set_int("user_level_c_total",$level['c_total'], $userid);
+//		$prefs_user_level->set_int("user_level_i_total",$level['i_total'], $userid);
+	}
+	
+	// onEvents go here.
+	
+	public function onImageUpload(Event $event) {
+		$this->set_user_level();
+	}
+	
+	public function onCommentPosting(Event $event) {
+		$this->set_user_level();
+	}
+	
+	public function onTagSet(Event $event) {
+		$this->set_user_level();
 	}
 	
 	public function onInitExt(Event $event) {
@@ -97,44 +181,34 @@ class User_Levels_Base extends SimpleExtension {
 			level_name					: Identifier (for practical reasons)
 			
 			level_mode_c				: Total "Contributions" mode level equivelent (default)
-				level_mode_c_p			: Posts^ required for level
-				level_mode_c_c			: Comments^ required for level
-				level_mode_c_t			: Tags^ required for level
-				level_mode_c_r			: Referrals^* required for level
+				level_mode_c_p			: Posts required for level
+				level_mode_c_c			: Comments required for level
+				level_mode_c_t			: Tags required for level
 			
 			level_mode_i				: Total "Influence" mode level equivelent
-				level_mode_i_p			: % of Posts^ required for level
-				level_mode_i_c			: % of Comments^ required for level
-				level_mode_i_t			: % of Tags^ required for level
-				level_mode_i_r			: % of Referrals^* required for level
+				level_mode_i_p			: % of Posts required for level
+				level_mode_i_c			: % of Comments required for level
+				level_mode_i_t			: % of Tags required for level
 		
-		^ optional... not sure if I'll be implementing this, as it could be unnecessary, but it would add a lot more customization.
-		* supposing a referral system exists.
-		
-		For now, I'm assuming things will be kept simple, as all posts, tags, and comments will be added together and stored as total user contribution.
-		Our short-term goal is to have $user->level = [integer: sum(total post count + total comment count + total tag history changes)]
-		
-		For now, however, let's set some default settings for when "Influence" mode does come into play.
-		
-		TODO: Include a config panel with these options.
+		Now that we have the concept down, time for more advanced parts.
+		"Multipliers" are basically incentives or demerits for each individual thing. For example:
+			+ Gain 2 points for each image you upload, 1 for every tag, and 3 for each comment.
+			- Lose 5 points for every "slap" or punishment.
+				
+		TODO: Create a database table that is like this.
 		**/
 		global $config;
-		$config->set_default_string("user_level_mode", "c");	// Setting the rank mode to "Contributions"
-		$config->set_default_bool("user_level_custom", false);	// Turning off custom ranks for now.
-		
-		/**
-		TODO: move this to private function, call on ImageUploadEvent, CommentPostingEvent, etc.
-		The extension will now get the options that have been set, and implement them.
-		**/
-		global $user, $database;
-		$userid = $user->id;
-		$mode = $config->get_string("user_level_mode", "c");
-		$custom = $config->get_bool("user_level_custom", false);
-		// Now that we have all the variables, get the user level.
-		$user_level = $this->get_user_level($userid, $mode, $custom);
-		// And put it into the userprefs. This won't be changable by the user, but it's an easy way to store the data since we don't need yet another db table.
-		$prefs_user_level = new DatabasePrefs($database, $userid);
-		$prefs_user_level->set_int("user_level",$user_level, $userid);
+		$config->set_default_int("user_level_m_p", 1);	// Multiplier for posts
+		$config->set_default_int("user_level_m_c", 1);	// Multiplier for comments
+		$config->set_default_int("user_level_m_t", 1);	// Multiplier for tags
+		$config->set_default_int("user_level_m_s", 3);	// Multiplier for slaps (negative points)
 	}
+}
+
+class User_Levels_Config extends SimpleExtension {
+	/**
+	 * This class handles configuration of the User_Levels system.
+	**/
+	// TODO: Create a setupblock for multipliers.
 }
 ?>
