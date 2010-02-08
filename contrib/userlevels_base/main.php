@@ -365,6 +365,98 @@ class User_Levels_Punishment extends SimpleExtension {
 		$this->slap_user($userid,1);
 		send_event(new UserLevelsPunishmentEvent());
 	}
+}
 
+class User_Level_Experience extends SimpleExtension {
+	public function onPageRequest(Event $event) {
+		/**
+		 * Stub. Need to get the custom ranks first.
+		 */
+		if($event->page_matches("user_levels/slap")) {
+			echo '<script type="text/javascript"> 
+			$(function() {
+				$("#progressbar").progressbar({
+					value: 79.1236749117	});
+			});
+			</script>';
+		}
+	}
+}
+
+class UserLevelEditor extends SimpleExtension {
+	public function onPageRequest(Event $event) {
+		if($event->page_matches("user_levels/editor")) {
+		/**
+		 * Displays the level editor.
+		 */
+			global $user, $database;
+			if(!$user->is_admin()) {
+				$this->theme->display_permission_denied($page);
+			} else {
+				// I have my doubts about this... 
+				$levels = $database->get_all("SELECT * FROM user_level_editor ORDER BY id ASC");
+				$this->theme->display_editor($levels);
+			}
+		}
+		if($event->page_matches("user_levels/add")) {
+			/**
+			 * Adds a user level
+			 */			
+			$level_name = $_POST['level_name'];
+			$level_c_total = $_POST['level_c_total'];
+			$level_c_p = $_POST['level_c_p'];
+			$level_c_c = $_POST['level_c_c'];
+			$level_c_t = $_POST['level_c_t'];
+			
+			if(!isset($level_name)) { die("No name!"); }
+			if(!isset($level_c_total)) { $level_c_total = 0; }
+			if(!isset($level_c_p)) { $level_c_p = 0; }
+			if(!isset($level_c_c)) { $level_c_c = 0; }
+			if(!isset($level_c_t)) { $level_c_t = 0; }
+			
+			$database->Execute("INSERT INTO aliases(id, level_name, level_c_total, level_c_p, level_c_c, level_c_t) VALUES(?, ?, ?, ?, ?, ?)", array('', $level_name, $level_c_total, $level_c_p, $level_c_c, $level_c_t));
+			log_info("user_level_editor", "Added User Level: {$event->oldtag} -> {$event->newtag}");
+		}
+		if($event->page_matches("user_levels/remove")) {
+		
+		}
+	}
+	
+	public function onInitExt(Event $event) {
+		/**
+		 * OK... what are we doing here?
+		 * 
+		 * First, let's have an extension version.
+		 */
+		global $config;
+		$version = $config->get_int("user_level_editor", 0);
+		/**
+		 * If this version is less than "1", it's time to install.
+		 *
+		 * REMINDER: If I change the database tables, I need to change the version.
+		 *
+		 * FUTURE: Add this to the create table once I'm ready for influence points.
+		 		 , level_i_p DECIMAL
+				 , level_i_c DECIMAL
+				 , level_i_t DECIMAL
+				 , level_i_total DECIMAL
+		 */
+		 if($version < 1) {
+		 	/**
+		 	* Installer
+		 	*/
+			global $database;
+			$database->create_table("user_level_editor",
+                "id SCORE_AIPK
+				 , level_name VARCHAR(128)
+                 , level_c_p INTEGER
+                 , level_c_c INTEGER
+                 , level_c_t INTEGER
+                 , level_c_total INTEGER
+                 , INDEX(id)
+                ");
+			$config->set_int("user_level_editor", 1);
+		}
+	}
 }
 ?>
