@@ -194,6 +194,7 @@ function create_tables($dsn) { // {{{
 			name VARCHAR(128) NOT NULL PRIMARY KEY,
 			value TEXT
 		"));
+		// User Preferences Installation
 		$db->execute($engine->create_table_sql("user_prefs", "
 			user_id INTEGER NOT NULL,
 			name VARCHAR(128) NOT NULL,
