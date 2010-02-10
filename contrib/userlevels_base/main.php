@@ -326,71 +326,82 @@ class User_Level_Experience extends SimpleExtension {
 		return $exp_reqd;
 	}
 
-	public function onPageRequest(Event $event) {
+	private function generate_exp_bar($userid) {
 		/**
-		 * In development.
+		 * In development. Perhaps this should go in the theme file?
 		 */
-		if($event->page_matches("user_levels/exp")) {
-			/**
-			 * This page will get the current user's exp and display it to him/her.
-			 * Include the jQueryUI and related theme files.
-			 */
-			global $page, $config, $userprefs;
-			$html = '<link type="text/css" href="/contrib/userlevels_base/css/custom-theme/jquery-ui-1.7.2.custom.css" rel="stylesheet" /> 
-				<script type="text/javascript" src="/contrib/userlevels_base/js/jquery-1.3.2.min.js"></script>
-				<script type="text/javascript" src="/contrib/userlevels_base/js/jquery-ui-1.7.2.custom.min.js"></script>';
-			/**
-			 * We shall do the following:
-			 * 1. Get the user's total points ($up)
-			 * 2. Get the multiplier ($lm)
-			 * 3. Get the level from the total points and the multiplier ($ul)
-			 * 4. Get the current level's required points ($lc)
-			 * 5. Get the next level's required points ($ln)
-			 * 6. Calculate the points until the next level ($pl)
-			 * 7. Calculate the maximum progress bar value ($pm)
-			 * 8. Calculate the progress bar's numerator ($pn)
-			 * 9. Calculate the progress bar's percentage ($pp)
-			 */
-			$up = $userprefs->get_int("user_level_c_total");
-			$lm = $config->get_string("user_level_m_l");
-			
-			$ul = $this->get_level($up,$lm);
-			$lc = $this->get_exp($ul, $lm);
-			$ln = $this->get_exp(($ul+1), $lm);
-			
-			$pl = $ln - $up;
-			$pm = $ln - $lc;
-			$pn = $up - $lc;
-			
-			$pp = ($pn / $pm) * 100;
-			
-			$html .= "User's points level: $up<br />
-				  Level multiplier: $lm<br />
-				  <br />
-				  User's level: $ul<br />
-				  Level $ul's exp: $lc<br />
-				  Next level's exp: $ln<br />
-				  <br />
-				  Points required until next level-up: $pl<br />
-				  Progress bar: $pn / $pm = $pp%";
-			
-			
-			
-			/**
-			 * Now that we have all of this information, let's present it:
-			 * 1. Display the progress bar.
-			 */
-			$html .=   '<script type="text/javascript"> 
-						$(function() {
-							$("#progressbar'.$up.'").progressbar({
-								value: '.$pp.'	});
-						});
-						</script>
-						<div id="progressbar'.$up.'" title="'.$pp.'%" style="height: 20px; width: 300px;"></div>';
-			
-			$page->set_mode("data");
-			$page->set_data($html);
+
+		/**
+		 * This page will get the current user's exp and display it to him/her.
+		 * Include the jQueryUI and related theme files.
+		 */
+		global $config, $database;
+		$ulprefs = new DatabasePrefs($database, $userid);
+		$html = '<link type="text/css" href="/contrib/userlevels_base/css/custom-theme/jquery-ui-1.7.2.custom.css" rel="stylesheet" /> 
+			<script type="text/javascript" src="/contrib/userlevels_base/js/jquery-1.3.2.min.js"></script>
+			<script type="text/javascript" src="/contrib/userlevels_base/js/jquery-ui-1.7.2.custom.min.js"></script>';
+		/**
+		 * We shall do the following:
+		 * 1. Get the user's total points ($up)
+		 * 2. Get the multiplier ($lm)
+		 * 3. Get the level from the total points and the multiplier ($ul)
+		 * 4. Get the current level's required points ($lc)
+		 * 5. Get the next level's required points ($ln)
+		 * 6. Calculate the points until the next level ($pl)
+		 * 7. Calculate the maximum progress bar value ($pm)
+		 * 8. Calculate the progress bar's numerator ($pn)
+		 * 9. Calculate the progress bar's percentage ($pp)
+		 */
+		$up = $ulprefs->get_int("user_level_c_total");
+		$lm = $config->get_string("user_level_m_l");
+		
+		$ul = $this->get_level($up,$lm);
+		$lc = $this->get_exp($ul, $lm);
+		$ln = $this->get_exp(($ul+1), $lm);
+		
+		$pl = $ln - $up;
+		$pm = $ln - $lc;
+		$pn = $up - $lc;
+		
+		$pp = ($pn / $pm) * 100;
+		
+		/**
+		 * Now that we have all of this information, let's present it:
+		 * 1. Display the progress bar.
+		 */
+		$html .=   '<script type="text/javascript"> 
+					$(function() {
+						$("#progressbar'.$up.'").progressbar({
+							value: '.$pp.'	});
+					});
+					</script>
+					<div align="center"><div id="progressbar'.$up.'" title="'.$pp.'%" style="height: 20px;"></div></div>';
+		$testing = 0;
+		if($testing ==1) {
+		$html .= "<br />User's points level: $up<br />
+			  Level multiplier: $lm<br />
+			  <br />
+			  User's level: $ul<br />
+			  Level $ul's exp: $lc<br />
+			  Next level's exp: $ln<br />
+			  <br />
+			  Points required until next level-up: $pl<br />
+			  Progress bar: $pn / $pm = $pp%";
+		} else {
+		$html .= "<b>User's level: $ul</b><br />
+			  
+			  <br />Experience: $up<br />
+
+			  Points required until next level-up: $pl<br />";
 		}
+		
+		return $html;
+	}
+	
+	public function onUserPageBuilding(Event $event) {
+		global $database, $user, $page;
+		$html = $this->generate_exp_bar($event->display_user->id);
+		$page->add_block(new Block('Level Stats',$html, "main", 5));
 	}
 }
 
