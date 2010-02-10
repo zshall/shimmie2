@@ -48,21 +48,6 @@ class User_Levels_Base extends SimpleExtension {
 			$t = "$level_u_t";
 		}
 		
-/*		// Get count of posts overall (TODO: exclude admins)
-		$level_t_p = ceil($database->db->GetOne('SELECT COUNT(*) FROM `images`'));
-		$tp = "$level_t_p";
-		
-		// Get count of comments overall (TODO: exclude admins)
-		$level_t_c = ceil($database->db->GetOne('SELECT COUNT(*) FROM `comments`'));
-		$tc = "$level_t_c";
-		
-		// Get count of tags overall (if tag history is enabled) (TODO: exclude admins)
-		$tt = 0;
-		if(class_exists("Tag_History")) {
-			$level_t_t = ceil($database->db->GetOne('SELECT COUNT(*) FROM `tag_histories`'));
-			$tt = "$level_t_t";
-		}*/
-		
 		// Let's generate a lot of numbers then. First, get multipliers.
 		global $config;
 		$mp = $config->get_int("user_level_m_p");
@@ -82,20 +67,7 @@ class User_Levels_Base extends SimpleExtension {
 		
 		// Generate total contribution point level
 		$level['c_total'] = ($level['c_p'] + $level['c_c'] + $level['c_t']) - $level['bad'];
-		
-/*		// Influence points are going to be extremely tough to generate actually, as when one person's influence increases, another's influence decreases.
-		// To spare us the trouble right now, I'll leave it out.
-		if($tp > 0) { $level['i_p'] = $p / $tp; } else { $level['i_p'] = 0; } // Influence on posts
-		if($tc > 0) { $level['i_c'] = $c / $tc; } else { $level['i_c'] = 0; } // Influence on comments
-		if($tt > 0) { $level['i_t'] = $t / $tt;	} else { $level['i_t'] = 0; } // Influence on tags
-		
-		// Finally, generate total influence points mode.
-		if($tp==0 && $tc==0 && $tt==0) {
-			$level['i_total'] = 0;
-		} else {
-			$level['i_total'] = ($p + $c + $t) / ($tp + $tc + $tt); 
-		}
-*/	
+	
 		// We are done! Returning generated values as a big array ^_^
 		return $level;
 	}
@@ -115,17 +87,10 @@ class User_Levels_Base extends SimpleExtension {
 		 *		$level['c_c']
 		 *		$level['c_t']
 		 *
-		 *		$level['i_p']@
-		 *		$level['i_c']@
-		 *		$level['i_t']@
-		 *
 		 *		$level['c_total']
-		 *		$level['i_total']@
 		 *
 		 *		$level['bad']
-		 * @ Disabled for now.
 		 *
-		 * BLARG!! INFLUENCE POINTS ARE NOT INTEGERS. DON'T FORGET!
 		*******************************/
 		
 		// Let's store all these in the preferences. This won't be changable by the user, but will be good for admins later in development.
@@ -135,12 +100,9 @@ class User_Levels_Base extends SimpleExtension {
 		$prefs_user_level->set_int("user_level_c_c",$level['c_c'], $userid);
 		$prefs_user_level->set_int("user_level_c_t",$level['c_t'], $userid);
 		
-/*		$prefs_user_level->set_int("user_level_i_p",$level['i_p'], $userid);
-		$prefs_user_level->set_int("user_level_i_c",$level['i_c'], $userid);
-		$prefs_user_level->set_int("user_level_i_t",$level['i_t'], $userid);*/
+
 		
 		$prefs_user_level->set_int("user_level_c_total",$level['c_total'], $userid);
-//		$prefs_user_level->set_int("user_level_i_total",$level['i_total'], $userid);
 	}
 	
 	// onEvents go here.
@@ -175,44 +137,15 @@ class User_Levels_Base extends SimpleExtension {
 	}
 	
 	public function onInitExt(Event $event) {
-		/** 
-		Probably most of the stuff we do will be done here.
-		First, let's take care of modes.
-		"Contributions" mode is going to be what I'm going to add right now,
-		and "Influence" mode will be for the future. I'm not sure how
-		both of these will coexist with each other, I'm thinking a database
-		table that is as followed:
-		
-		Table user_levels:
-			level_id	[primary key]	: Identifier (for coding reasons)
-			level_name					: Identifier (for practical reasons)
-			
-			level_mode_c				: Total "Contributions" mode level equivelent (default)
-				level_mode_c_p			: Posts required for level
-				level_mode_c_c			: Comments required for level
-				level_mode_c_t			: Tags required for level
-			
-			level_mode_i				: Total "Influence" mode level equivelent
-				level_mode_i_p			: % of Posts required for level
-				level_mode_i_c			: % of Comments required for level
-				level_mode_i_t			: % of Tags required for level
-		
-		Now that we have the concept down, time for more advanced parts.
-		"Multipliers" are basically incentives or demerits for each individual thing. For example:
-			+ Gain 2 points for each image you upload, 1 for every tag, and 3 for each comment.
-			- Lose 5 points for every "slap" or punishment.
-				
-		TODO: Create a database table that is like this.
-		**/
+		/**
+		 * How wrong I was when I first started with this project. onInitExt would cause
+		 * unnecessarily lengthened load times.
+		 */
 		global $config;
 		$config->set_default_int("user_level_m_p", 3);	// Multiplier for posts
 		$config->set_default_int("user_level_m_c", 2);	// Multiplier for comments
 		$config->set_default_int("user_level_m_t", 1);	// Multiplier for tags
 		$config->set_default_int("user_level_m_s", 8);	// Multiplier for slaps (negative points)
-		
-		//global $user;
-		//$userid = $user->id;
-		//$this->set_user_level($userid);
 	}
 }
 
@@ -225,11 +158,14 @@ class User_Levels_Config extends SimpleExtension {
 	public function onSetupBuilding($event) {
 		$sb = new SetupBlock("User Levels");
 		$sb->add_label("<i>Multipliers</i>");
-		$sb->add_label("<br />(Encourage some things more than others)");
+		$sb->add_label("<br />(Encourage some things more than others)<br />DO NOT SET TO NEGATIVE VALUES.");
 		$sb->add_int_option("user_level_m_p", "<br />Post Multiplier: ");
 		$sb->add_int_option("user_level_m_c", "<br />Comment Multiplier: ");
 		$sb->add_int_option("user_level_m_t", "<br />Tag Multiplier: ");
 		$sb->add_int_option("user_level_m_s", "<br />Slap Multiplier: ");
+		$sb->add_label("<br /><i>Level-up Multiplier:</i>");
+		$sb->add_label("<br />(Decimals OK) The higher this is, the faster people will 'level up.'");
+		$sb->add_text_option("user_level_m_l", "<br />Level-up Multiplier: ");
 		$event->panel->add_block($sb);
 	}
 	/**
@@ -262,15 +198,16 @@ class User_Levels_Profile extends SimpleExtension {
 	/**
 	 * This section puts the user's level on their profile.
 	 *
-	 * TODO: Get custom ranks and titles.
+	 * ... or not. The user experience system would be a lot more cool
+	 * than this. Scroll down a bit to see how development on it is going.
 	 */
 	
-	public function onUserPageBuilding(Event $event) {
-		global $database, $user, $page;
-		$ul = new DatabasePrefs($database, $event->display_user->id);
-		$user_level_total = $ul->get_int("user_level_c_total",0);
-		$page->add_block(new Block('User Level','Total user level: '.$user_level_total.'.'));
-	}
+//	public function onUserPageBuilding(Event $event) {
+//		global $database, $user, $page;
+//		$ul = new DatabasePrefs($database, $event->display_user->id);
+//		$user_level_total = $ul->get_int("user_level_c_total",0);
+//		$page->add_block(new Block('User Level','Total user level: '.$user_level_total.'.'));
+//	}
 }
 
 class UserLevelsPunishmentEvent extends Event {}
@@ -324,8 +261,8 @@ class User_Levels_Punishment extends SimpleExtension {
 		 * The second part of the punishment form...
 		 */
 		global $user, $page;
-		if($user->is_admin()) {
-			if($event->page_matches("user_levels/slap")) {
+		if($event->page_matches("user_levels/slap")) {
+			if($user->is_admin()) {
 				if(isset($_POST['user_id']) && isset($_POST['user_name']) && isset($_POST['points'])) {
 					if($_POST['points'] > 0) {
 						$this->slap_user($_POST['user_id'], $_POST['points']);
@@ -335,8 +272,8 @@ class User_Levels_Punishment extends SimpleExtension {
 						$page->set_redirect(make_link("user/{$_POST['user_name']}"));
 					} else { die("Error: did you enter a number greater than 1?"); }
 				} else { die("Error: did you submit the form?"); }
-			}
-		} else { die("Error: must be admin"); }
+			} else { die("Error: must be admin"); }
+		} 
 	}
 	
 	// onEvents go here.
@@ -370,17 +307,89 @@ class User_Levels_Punishment extends SimpleExtension {
 }
 
 class User_Level_Experience extends SimpleExtension {
+	private function get_level($exp_points, $multiplier) {
+	/**
+	 * If we have exp points, we can find out what level someone is.
+	 * This basically takes the formula in reverse, solving for x.
+	 */
+		$level = floor(sqrt($exp_points / $multiplier));
+		return $level;
+	}
+	
+	private function get_exp($level,$multiplier) {
+	/**
+	 * If we know a level, we can find out how many experience points
+	 * are required to reach it. This interprets the formula in a fashion
+	 * that solves for y.
+	 */
+		$exp_reqd = floor($multiplier*(pow($level,2)));
+		return $exp_reqd;
+	}
+
 	public function onPageRequest(Event $event) {
 		/**
-		 * Stub. Need to get the custom ranks first.
+		 * In development.
 		 */
-		if($event->page_matches("user_levels/slap")) {
-			echo '<script type="text/javascript"> 
-			$(function() {
-				$("#progressbar").progressbar({
-					value: 79.1236749117	});
-			});
-			</script>';
+		if($event->page_matches("user_levels/exp")) {
+			/**
+			 * This page will get the current user's exp and display it to him/her.
+			 * Include the jQueryUI and related theme files.
+			 */
+			global $page, $config, $userprefs;
+			$html = '<link type="text/css" href="/contrib/userlevels_base/css/custom-theme/jquery-ui-1.7.2.custom.css" rel="stylesheet" /> 
+				<script type="text/javascript" src="/contrib/userlevels_base/js/jquery-1.3.2.min.js"></script>
+				<script type="text/javascript" src="/contrib/userlevels_base/js/jquery-ui-1.7.2.custom.min.js"></script>';
+			/**
+			 * We shall do the following:
+			 * 1. Get the user's total points ($up)
+			 * 2. Get the multiplier ($lm)
+			 * 3. Get the level from the total points and the multiplier ($ul)
+			 * 4. Get the current level's required points ($lc)
+			 * 5. Get the next level's required points ($ln)
+			 * 6. Calculate the points until the next level ($pl)
+			 * 7. Calculate the maximum progress bar value ($pm)
+			 * 8. Calculate the progress bar's numerator ($pn)
+			 * 9. Calculate the progress bar's percentage ($pp)
+			 */
+			$up = $userprefs->get_int("user_level_c_total");
+			$lm = $config->get_string("user_level_m_l");
+			
+			$ul = $this->get_level($up,$lm);
+			$lc = $this->get_exp($ul, $lm);
+			$ln = $this->get_exp(($ul+1), $lm);
+			
+			$pl = $ln - $up;
+			$pm = $ln - $lc;
+			$pn = $up - $lc;
+			
+			$pp = ($pn / $pm) * 100;
+			
+			$html .= "User's points level: $up<br />
+				  Level multiplier: $lm<br />
+				  <br />
+				  User's level: $ul<br />
+				  Level $ul's exp: $lc<br />
+				  Next level's exp: $ln<br />
+				  <br />
+				  Points required until next level-up: $pl<br />
+				  Progress bar: $pn / $pm = $pp%";
+			
+			
+			
+			/**
+			 * Now that we have all of this information, let's present it:
+			 * 1. Display the progress bar.
+			 */
+			$html .=   '<script type="text/javascript"> 
+						$(function() {
+							$("#progressbar'.$up.'").progressbar({
+								value: '.$pp.'	});
+						});
+						</script>
+						<div id="progressbar'.$up.'" title="'.$pp.'%" style="height: 20px; width: 300px;"></div>';
+			
+			$page->set_mode("data");
+			$page->set_data($html);
 		}
 	}
 }
