@@ -52,6 +52,8 @@ class CustomUserPageTheme extends UserPageTheme {
 		$tfe = new TextFormattingEvent($tac);
 		send_event($tfe);
 		$tac = $tfe->formatted;
+		
+		$reca = "<tr><td colspan='2'>".captcha_get_html()."</td></tr>";
 
 		if(empty($tac)) {$html = "";}
 		else {$html = "<p>$tac</p>";}
@@ -63,6 +65,7 @@ class CustomUserPageTheme extends UserPageTheme {
 				<tr><td>Password</td><td><input type='password' name='pass1'></td></tr>
 				<tr><td>Repeat Password</td><td><input type='password' name='pass2'></td></tr>
 				<tr><td>Email (Optional)</td><td><input type='text' name='email'></td></tr>
+				$reca;
 				<tr><td colspan='2'><input type='Submit' value='Create Account'></td></tr>
 			</table>
 		</form>
@@ -112,6 +115,14 @@ class CustomUserPageTheme extends UserPageTheme {
 				<tr><td colspan='2'><input type='Submit' value='Change Password'></td></tr>
 			</table>
 		</form>
+		<p><form action='".make_link("user_admin/change_email")."' method='POST'>
+			<input type='hidden' name='id' value='{$duser->id}'>
+			<table style='width: 300px;'>
+				<tr><th colspan='2'>Change Email</th></tr>
+				<tr><td>Address</td><td><input type='text' name='address' value='".html_escape($duser->email)."'></td></tr>
+				<tr><td colspan='2'><input type='Submit' value='Set'></td></tr>
+			</table>
+		</form></p>
 		";
 		return $html;
 	}

@@ -183,6 +183,9 @@ function make_link($page=null, $query=null) {
 		if(strpos($base, "?")) {
 			return "$base/$page&$query";
 		}
+		else if(strpos($query, "#") === 0) {
+			return "$base/$page$query";
+		}
 		else {
 			return "$base/$page?$query";
 		}
@@ -309,7 +312,7 @@ function check_cli() {
 function _count_execs($db, $sql, $inputarray) {
 	global $_execs;
 	if(DEBUG) {
-		$fp = @fopen("sql.log", "a");
+		$fp = @fopen("data/sql.log", "a");
 		if($fp) {
 			if(is_array($inputarray)) {
 				fwrite($fp, preg_replace('/\s+/msi', ' ', $sql)." -- ".join(", ", $inputarray)."\n");
@@ -465,6 +468,10 @@ function format_text($string) {
 	return $tfe->formatted;
 }
 
+function warehouse_path($base, $hash) {
+	$ab = substr($hash, 0, 2);
+	return "$base/$ab/$hash";
+}
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *\
 * Logging convenience                                                       *
@@ -845,8 +852,8 @@ function _get_user() {
 }
 
 
-$_cache_hash = null;
 $_cache_memcache = false;
+$_cache_key = null;
 $_cache_filename = null;
 
 function _cache_active() {
@@ -858,27 +865,36 @@ function _cache_active() {
 	);
 }
 
+function _cache_log($text) {
+	$fp = @fopen("data/cache.log", "a");
+	if($fp) {
+		fputs($fp, $text);
+		fclose($fp);
+	}
+}
+
 function _start_cache() {
-	global $_cache_hash, $_cache_memcache, $_cache_filename;
+	global $_cache_memcache, $_cache_key, $_cache_filename;
 
 	if(_cache_active()) {
-		$_cache_hash = md5($_SERVER["QUERY_STRING"]);
-
 		if(CACHE_MEMCACHE) {
 			$_cache_memcache = new Memcache;
 			$_cache_memcache->pconnect('localhost', 11211);
-			$zdata = $_cache_memcache->get($hash);
-			if($zdata) {
+			$_cache_key = "uri:".$_SERVER["REQUEST_URI"];
+			$data = $_cache_memcache->get($_cache_key);
+			if(DEBUG) {
+				$stat = $zdata ? "hit" : "miss";
+				_cache_log(time() . " " . sprintf(" %-4s ", $stat) . $_cache_key . "\n");
+			}
+			if($data) {
 				header("Content-type: text/html");
-				$data = @gzuncompress($zdata);
-				if($data) {
-					print $data;
-					exit;
-				}
+				print $data;
+				exit;
 			}
 		}
 
 		if(CACHE_DIR) {
+			$_cache_hash = md5($_SERVER["QUERY_STRING"]);
 			$ab = substr($_cache_hash, 0, 2);
 			$cd = substr($_cache_hash, 2, 2);
 			$_cache_filename = "data/$ab/$cd/$_cache_hash";
@@ -918,15 +934,16 @@ function _start_cache() {
 }
 
 function _end_cache() {
-	global $_cache_hash, $_cache_memcache, $_cache_filename;
+	global $_cache_memcache, $_cache_key, $_cache_filename;
 
 	if(_cache_active()) {
-		$data = gzcompress(ob_get_contents(), 9);
+		$data = ob_get_contents();
 		if(CACHE_MEMCACHE) {
-			$_cache_memcache->set($_cache_hash, $data, 0, 600);
+			$_cache_memcache->set($_cache_key, $data, 0, 600);
 		}
 		if(CACHE_DIR) {
-			file_put_contents($_cache_filename, $data);
+			$zdata = gzcompress($data, 2);
+			file_put_contents($_cache_filename, $zdata);
 		}
 	}
 }

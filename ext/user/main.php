@@ -49,8 +49,6 @@ class UserPage extends SimpleExtension {
 		$config->set_default_int("login_memory", 365);
 		$config->set_default_string("avatar_host", "gravatar");
 		$config->set_default_string("avatar_gravatar_options", "");
-		$config->set_default_string("avatar_gravatar_type", "");
-		$config->set_default_string("avatar_gravatar_rating", "");
 		$config->set_default_bool("login_tac_bbcode", true);
 	}
 
@@ -191,11 +189,6 @@ class UserPage extends SimpleExtension {
 		$sb->add_bool_option("login_signup_enabled", "Allow new signups: ");
 		$sb->add_longtext_option("login_tac", "<br>Terms &amp; Conditions:<br>");
 		$event->panel->add_block($sb);
-		
-		$sb2 = new SetupBlock("Avatar Options");
-		$sb2->add_choice_option("avatar_gravatar_type", array('Default'=>'d=default&', 'Wavatar'=>'d=wavatar&', 'Monster ID'=>'d=monsterid&', 'Identicon'=>'d=identicon&'), "<br>Type: ");
-		$sb2->add_choice_option("avatar_gravatar_rating", array('G'=>'r=g&', 'PG'=>'r=pg&', 'R'=>'r=r&', 'X'=>'r=x'), "<br>Rating: ");
-		$event->panel->add_block($sb2);
 	}
 
 	public function onUserBlockBuilding(Event $event) {
