@@ -10,9 +10,6 @@ function _new_user($row) {
  * The currently logged in user will always be accessable via the global variable $user
  */
 class User {
-	var $config;
-	var $database;
-
 	var $id;
 	var $name;
 	var $email;
@@ -42,10 +39,13 @@ class User {
 
 	public static function by_session($name, $session) {
 		global $config, $database;
-		$row = $database->get_row(
-				"SELECT * FROM users WHERE name = ? AND md5(concat(pass, ?)) = ?",
-				array($name, get_session_ip($config), $session)
-		);
+		if($database->engine->name == "mysql") {
+			$query = "SELECT * FROM users WHERE name = ? AND md5(concat(pass, ?)) = ?";
+		}
+		else {
+			$query = "SELECT * FROM users WHERE name = ? AND md5(pass || ?) = ?";
+		}
+		$row = $database->get_row($query, array($name, get_session_ip($config), $session));
 		return is_null($row) ? null : new User($row);
 	}
 
@@ -93,6 +93,16 @@ class User {
 	public function is_anonymous() {
 		global $config;
 		return ($this->id == $config->get_int('anon_id'));
+	}
+
+	/**
+	 * Test if this user is logged in
+	 *
+	 * @retval bool
+	 */
+	public function is_logged_in() {
+		global $config;
+		return ($this->id != $config->get_int('anon_id'));
 	}
 
 	/**

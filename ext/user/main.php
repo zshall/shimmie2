@@ -1,5 +1,9 @@
 <?php
-require_once "lib/recaptchalib.php";
+/*
+ * Name: User Management
+ * Author: Shish
+ * Description: Allows people to sign up to the website
+ */
 
 class UserBlockBuildingEvent extends Event {
 	var $parts = array();
@@ -39,14 +43,13 @@ class UserCreationEvent extends Event {
 class UserCreationException extends SCoreException {}
 
 class UserPage extends SimpleExtension {
-	var $theme;
-
 	public function onInitExt(Event $event) {
 		global $config;
 		$config->set_default_bool("login_signup_enabled", true);
 		$config->set_default_int("login_memory", 365);
 		$config->set_default_string("avatar_host", "gravatar");
 		$config->set_default_string("avatar_gravatar_options", "");
+		$config->set_default_bool("login_tac_bbcode", true);
 	}
 
 	public function onPageRequest(Event $event) {
@@ -105,16 +108,8 @@ class UserPage extends SimpleExtension {
 				}
 				else {
 					try {
-						if(strlen($config->get_string('api_recaptcha_privkey')) > 0) {
-							$resp = recaptcha_check_answer(
-									$config->get_string('api_recaptcha_privkey'),
-									$_SERVER["REMOTE_ADDR"],
-									$_POST["recaptcha_challenge_field"],
-									$_POST["recaptcha_response_field"]);
-
-							if(!$resp->is_valid) {
-								throw new UserCreationException("Error in captcha");
-							}
+						if(!captcha_check()) {
+							throw new UserCreationException("Error in captcha");
 						}
 
 						$uce = new UserCreationEvent($_POST['name'], $_POST['pass1'], $_POST['email']);
@@ -236,7 +231,12 @@ class UserPage extends SimpleExtension {
 		if(!is_null($duser)) {
 			$user = $duser;
 			$this->set_login_cookie($name, $pass);
-			log_info("user", "Logged in");
+			if($user->is_admin()) {
+				log_warning("user", "Admin logged in");
+			}
+			else {
+				log_info("user", "User logged in");
+			}
 			$page->set_mode("redirect");
 			$page->set_redirect(make_link("user"));
 		}

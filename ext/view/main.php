@@ -1,5 +1,11 @@
 <?php
 /*
+ * Name: Image Viewer
+ * Author: Shish
+ * Description: Allows users to see uploaded images
+ */
+
+/*
  * DisplayingImageEvent:
  *   $image -- the image being displayed
  *   $page  -- the page to display on
@@ -39,7 +45,7 @@ class ImageInfoBoxBuildingEvent extends Event {
 class ImageInfoSetEvent extends Event {
 	var $image;
 
-	public function ImageInfoSetEvent($image) {
+	public function ImageInfoSetEvent(Image $image) {
 		$this->image = $image;
 	}
 }
@@ -75,7 +81,7 @@ class ViewImage implements Extension {
 
 			if(isset($_GET['search'])) {
 				$search_terms = explode(' ', $_GET['search']);
-				$query = "search=".url_escape($_GET['search']);
+				$query = "#search=".url_escape($_GET['search']);
 			}
 			else {
 				$search_terms = array();

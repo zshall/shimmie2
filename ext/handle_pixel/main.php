@@ -1,8 +1,8 @@
 <?php
 /**
- * Name: Pixel File Handler
+ * Name: Handle Pixel
  * Author: Shish <webmaster@shishnet.org>
- * Description: Handle JPG, PNG, GIF, etc files
+ * Description: Handle JPEG, PNG, GIF, etc files
  */
 
 class PixelFileHandler extends DataHandlerExtension {
@@ -42,9 +42,8 @@ class PixelFileHandler extends DataHandlerExtension {
 	}
 
 	protected function create_thumb($hash) {
-		$ha = substr($hash, 0, 2);
-		$inname  = "images/$ha/$hash";
-		$outname = "thumbs/$ha/$hash";
+		$inname  = warehouse_path("images", $hash);
+		$outname = warehouse_path("thumbs", $hash);
 		global $config;
 
 		$ok = false;
@@ -74,7 +73,25 @@ class PixelFileHandler extends DataHandlerExtension {
 		// convert to bitmap & back to strip metadata -- otherwise we
 		// can end up with 3KB of jpg data and 200KB of misc extra...
 		// "-limit memory $mem" broken?
-		exec("convert {$inname}[0] -geometry {$w}x{$h} bmp:- | convert bmp:- -quality {$q} jpg:$outname");
+
+		// Windows is a special case
+		if(in_array("OS", $_SERVER) && $_SERVER["OS"] == 'Windows_NT') {
+			$imageMagick = $config->get_string("thumb_convert_path");
+
+			// running the call with cmd.exe requires quoting for our paths
+			$stringFormat = '"%s" "%s[0]" -strip -thumbnail %ux%u jpg:"%s"';
+
+			// Concat the command altogether
+			$cmd = sprintf($stringFormat, $imageMagick, $inname, $w, $h, $outname);
+		}
+		else {
+			$cmd = "convert {$inname}[0] -strip -thumbnail {$w}x{$h} jpg:$outname";
+		}
+
+		// Execute IM's convert command, grab the output and return code it'll help debug it
+		exec($cmd, $output, $ret);
+
+		log_debug('handle_pixel', "Generating thumnail with command `$cmd`, returns $ret");
 
 		return true;
 	}

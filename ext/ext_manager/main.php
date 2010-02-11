@@ -2,20 +2,31 @@
 /**
  * Name: Extension Manager
  * Author: Shish <webmaster@shishnet.org>
- * Link: http://trac.shishnet.org/shimmie2/
+ * Link: http://code.shishnet.org/shimmie2/
  * License: GPLv2
+ * Visibility: admin
  * Description: A thing for point & click extension management
+ * Documentation:
+ *   Allows the admin to view a list of all extensions and enable or
+ *   disable them; also allows users to view the list of activated
+ *   extensions and read their documentation
  */
 
 /** @private */
+function __extman_extcmp(ExtensionInfo $a, ExtensionInfo $b) {
+	return strcmp($a->name, $b->name);
+}
+
+/** @private */
 class ExtensionInfo {
-	var $ext_name, $name, $link, $author, $email, $description, $documentation, $version;
+	var $ext_name, $name, $link, $author, $email;
+	var $description, $documentation, $version, $visibility;
 
 	function ExtensionInfo($main) {
 		$matches = array();
 		$lines = file($main);
-		preg_match("#contrib/(.*)/main.php#", $main, $matches);
-		$this->ext_name = $matches[1];
+		preg_match("#(ext|contrib)/(.*)/main.php#", $main, $matches);
+		$this->ext_name = $matches[2];
 		$this->name = $this->ext_name;
 		$this->enabled = $this->is_enabled($this->ext_name);
 
@@ -23,6 +34,9 @@ class ExtensionInfo {
 			$line = $lines[$i];
 			if(preg_match("/Name: (.*)/", $line, $matches)) {
 				$this->name = $matches[1];
+			}
+			if(preg_match("/Visibility: (.*)/", $line, $matches)) {
+				$this->visibility = $matches[1];
 			}
 			if(preg_match("/Link: (.*)/", $line, $matches)) {
 				$this->link = $matches[1];
@@ -57,6 +71,7 @@ class ExtensionInfo {
 					$this->documentation .= " ".substr($lines[$i+1], $start_len);
 					$i++;
 				}
+				$this->documentation = str_replace('$site', make_http(get_base_href()), $this->documentation);
 			}
 			if(preg_match("/\*\//", $line, $matches)) {
 				break;
@@ -65,7 +80,9 @@ class ExtensionInfo {
 	}
 
 	private function is_enabled($fname) {
-		return file_exists("ext/$fname");
+		if(file_exists("ext/$fname") && file_exists("contrib/$fname")) return true; // both
+		if(file_exists("contrib/$fname")) return false; // only disabled (optional)
+		return null; // only active (core)
 	}
 }
 
@@ -86,17 +103,22 @@ class ExtManager extends SimpleExtension {
 					}
 				}
 				else {
-					$this->theme->display_table($page, $this->get_extensions());
+					$this->theme->display_table($page, $this->get_extensions(true), true);
 				}
 			}
 			else {
-				$this->theme->display_permission_denied($page);
+				$this->theme->display_table($page, $this->get_extensions(false), false);
 			}
 		}
 
 		if($event->page_matches("ext_doc")) {
 			$ext = $event->get_arg(0);
-			$info = new ExtensionInfo("contrib/$ext/main.php");
+			if(file_exists("ext/$ext/main.php")) {
+				$info = new ExtensionInfo("ext/$ext/main.php");
+			}
+			else {
+				$info = new ExtensionInfo("contrib/$ext/main.php");
+			}
 			$this->theme->display_doc($page, $info);
 		}
 	}
@@ -106,14 +128,29 @@ class ExtManager extends SimpleExtension {
 		if($user->is_admin()) {
 			$event->add_link("Extension Manager", make_link("ext_manager"));
 		}
+		else {
+			$event->add_link("Help", make_link("ext_manager"));
+		}
 	}
 
 
-	private function get_extensions() {
+	private function get_extensions($all) {
 		$extensions = array();
-		foreach(glob("contrib/*/main.php") as $main) {
+		if($all) {
+			$exts = glob("ext/*/main.php");
+			foreach(glob("contrib/*/main.php") as $ae) {
+				if(!in_array("ext".substr($ae, 7), $exts)) {
+					$exts[] = $ae;
+				}
+			}
+		}
+		else {
+			$exts = glob("ext/*/main.php");
+		}
+		foreach($exts as $main) {
 			$extensions[] = new ExtensionInfo($main);
 		}
+		usort($extensions, "__extman_extcmp");
 		return $extensions;
 	}
 

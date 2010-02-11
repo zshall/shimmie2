@@ -1,15 +1,14 @@
 <?php
 /*
- * Name: MP3 File Handler
+ * Name: Handle MP3
  * Author: Shish <webmaster@shishnet.org>
  * Description: Handle MP3 files
  */
 
 class MP3FileHandler extends DataHandlerExtension {
 	protected function create_thumb($hash) {
-		$ha = substr($hash, 0, 2);
 		// FIXME: scale image, as not all boards use 192x192
-		copy("ext/handle_mp3/thumb.jpg", "thumbs/$ha/$hash");
+		copy("ext/handle_mp3/thumb.jpg", warehouse_path("thumbs", $hash));
 	}
 
 	protected function supported_ext($ext) {

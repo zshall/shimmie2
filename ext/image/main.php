@@ -1,5 +1,12 @@
 <?php
 /*
+ * Name: Image Manager
+ * Author: Shish
+ * Description: Handle the image database
+ * Visibility: admin
+ */
+
+/*
  * ImageAdditionEvent:
  *   $user  -- the user adding the image
  *   $image -- the image being added
@@ -88,6 +95,7 @@ class ImageIO extends SimpleExtension {
 		$config->set_default_int('thumb_height', 192);
 		$config->set_default_int('thumb_quality', 75);
 		$config->set_default_int('thumb_mem_limit', parse_shorthand_int('8MB'));
+		$config->set_default_string('thumb_convert_path', 'convert.exe');
 
 		$config->set_default_bool('image_show_meta', false);
 		$config->set_default_string('image_ilink', '');
@@ -108,6 +116,24 @@ class ImageIO extends SimpleExtension {
 			else if($event->page_matches("thumb")) {
 				$this->send_file($num, "thumb");
 			}
+		}
+		if($event->page_matches("image_admin/delete")) {
+			global $page, $user;
+			if($user->is_admin() && isset($_POST['image_id'])) {
+				$image = Image::by_id($_POST['image_id']);
+				if($image) {
+					send_event(new ImageDeletionEvent($image));
+					$page->set_mode("redirect");
+					$page->set_redirect(make_link("post/list"));
+				}
+			}
+		}
+	}
+
+	public function onImageAdminBlockBuilding($event) {
+		global $user;
+		if($user->is_admin()) {
+			$event->add_part($this->theme->get_deleter_html($event->image->id));
 		}
 	}
 
@@ -210,11 +236,24 @@ class ImageIO extends SimpleExtension {
 				VALUES (?, ?, ?, ?, ?, ?, ?, ?, now(), ?)",
 				array($user->id, $_SERVER['REMOTE_ADDR'], $image->filename, $image->filesize,
 						$image->hash, $image->ext, $image->width, $image->height, $image->source));
-		$image->id = $database->db->Insert_ID();
+		if($database->engine->name == "pgsql") {
+			$database->Execute("UPDATE users SET image_count = image_count+1 WHERE id = ? ", array($user->id));
+			$image->id = $database->db->GetOne("SELECT id FROM images WHERE hash=?", array($image->hash));
+		}
+		else {
+			$image->id = $database->db->Insert_ID();
+		}
 
 		log_info("image", "Uploaded Image #{$image->id} ({$image->hash})");
 
-		send_event(new TagSetEvent($image, $image->get_tag_array()));
+		# at this point in time, the image's tags haven't really been set,
+		# and so, having $image->tag_array set to something is a lie (but
+		# a useful one, as we want to know what the tags are /supposed/ to
+		# be). Here we correct the lie, by first nullifying the wrong tags
+		# then using the standard mechanism to set them properly.
+		$tags_to_set = $image->get_tag_array();
+		$image->tag_array = array();
+		send_event(new TagSetEvent($image, $tags_to_set));
 	}
 // }}}
 // fetch image {{{

@@ -1,6 +1,6 @@
 <?php
 /*
- * Name: ICO File Handler
+ * Name: Handle ICO
  * Author: Shish <webmaster@shishnet.org>
  * Description: Handle windows icons
  */
@@ -91,9 +91,8 @@ class IcoFileHandler extends SimpleExtension {
 	private function create_thumb($hash) {
 		global $config;
 
-		$ha = substr($hash, 0, 2);
-		$inname  = "images/$ha/$hash";
-		$outname = "thumbs/$ha/$hash";
+		$inname  = warehouse_path("images", $hash);
+		$outname = warehouse_path("thumbs", $hash);
 
 		$w = $config->get_int("thumb_width");
 		$h = $config->get_int("thumb_height");

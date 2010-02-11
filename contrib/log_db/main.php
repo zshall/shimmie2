@@ -3,6 +3,7 @@
  * Name: Logging (Database)
  * Author: Shish
  * Description: Keep a record of SCore events
+ * Visibility: admin
  */
 
 class LogDatabase extends SimpleExtension {
@@ -13,14 +14,14 @@ class LogDatabase extends SimpleExtension {
 		if($config->get_int("ext_log_database_version") < 1) {
 			$database->create_table("score_log", "
 				id SCORE_AIPK,
-				date_sent DATETIME NOT NULL,
+				date_sent SCORE_DATETIME NOT NULL,
 				section VARCHAR(32) NOT NULL,
 				username VARCHAR(32) NOT NULL,
 				address SCORE_INET NOT NULL,
 				priority INT NOT NULL,
-				message TEXT NOT NULL,
-				INDEX(section)
+				message TEXT NOT NULL
 			");
+				//INDEX(section)
 			$config->set_int("ext_log_database_version", 1);
 		}
 
@@ -43,14 +44,54 @@ class LogDatabase extends SimpleExtension {
 		global $database, $user;
 		if($event->page_matches("log/view")) {
 			if($user->is_admin()) {
-				$events = $database->get_all("SELECT * FROM score_log");
+				$wheres = array();
+				$args = array();
+				if(!empty($_GET["time"])) {
+					$wheres[] = "date_sent LIKE ?";
+					$args[] = $_GET["time"]."%";
+				}
+				if(!empty($_GET["module"])) {
+					$wheres[] = "section = ?";
+					$args[] = $_GET["module"];
+				}
+				if(!empty($_GET["user"])) {
+					if($database->engine->name == "pgsql") {
+						if(preg_match("#\d+\.\d+\.\d+\.\d+(/\d+)?#", $_GET["user"])) {
+							$wheres[] = "(username = ? OR address << ?)";
+							$args[] = $_GET["user"];
+							$args[] = $_GET["user"];
+						}
+						else {
+							$wheres[] = "lower(username) = lower(?)";
+							$args[] = $_GET["user"];
+						}
+					}
+					else {
+						$wheres[] = "(username = ? OR address = ?)";
+						$args[] = $_GET["user"];
+						$args[] = $_GET["user"];
+					}
+				}
+				if(!empty($_GET["priority"])) {
+					$wheres[] = "priority >= ?";
+					$args[] = int_escape($_GET["priority"]);
+				}
+				$where = "";
+				if(count($wheres) > 0) {
+					$where = "WHERE ";
+					$where .= join(" AND ", $wheres);
+				}
+				$events = $database->get_all("SELECT * FROM score_log $where ORDER BY id DESC LIMIT 50", $args);
 				$this->theme->display_events($events);
 			}
 		}
 	}
 
 	public function onUserBlockBuilding($event) {
-		$event->add_link("Event Log", make_link("log/view"));
+		global $user;
+		if($user->is_admin()) {
+			$event->add_link("Event Log", make_link("log/view"));
+		}
 	}
 
 	public function onLog($event) {

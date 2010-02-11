@@ -77,6 +77,7 @@ class MySQL extends DBEngine {
 		$data = str_replace("SCORE_BOOL", "ENUM('Y', 'N')", $data);
 		$data = str_replace("SCORE_DATETIME", "DATETIME", $data);
 		$data = str_replace("SCORE_NOW", "\"1970-01-01\"", $data);
+		$data = str_replace("SCORE_STRNORM", "", $data);
 		return $data;
 	}
 
@@ -97,6 +98,7 @@ class PostgreSQL extends DBEngine {
 		$data = str_replace("SCORE_BOOL", "BOOL", $data);
 		$data = str_replace("SCORE_DATETIME", "TIMESTAMP", $data);
 		$data = str_replace("SCORE_NOW", "current_time", $data);
+		$data = str_replace("SCORE_STRNORM", "lower", $data);
 		return $data;
 	}
 
@@ -124,6 +126,7 @@ class SQLite extends DBEngine {
 
 	public function init($db) {
 		ini_set('sqlite.assoc_case', 0);
+		$db->execute("PRAGMA foreign_keys = ON;");
 		@sqlite_create_function($db->_connectionID, 'UNIX_TIMESTAMP', '_unix_timestamp', 1);
 		@sqlite_create_function($db->_connectionID, 'now', '_now', 0);
 		@sqlite_create_function($db->_connectionID, 'floor', '_floor', 1);
@@ -141,6 +144,7 @@ class SQLite extends DBEngine {
 		$data = str_replace("SCORE_BOOL_N", "'N'", $data);
 		$data = str_replace("SCORE_BOOL", "CHAR(1)", $data);
 		$data = str_replace("SCORE_NOW", "\"1970-01-01\"", $data);
+		$data = str_replace("SCORE_STRNORM", "", $data);
 		$cols = array();
 		$extras = "";
 		foreach(explode(",", $data) as $bit) {
@@ -175,7 +179,7 @@ class NoCache implements CacheEngine {
 	public function get_hits() {return 0;}
 	public function get_misses() {return 0;}
 }
-class MemCache implements CacheEngine {
+class MemcacheCache implements CacheEngine {
 	var $hits=0, $misses=0;
 
 	public function __construct($args) {
@@ -209,6 +213,37 @@ class MemCache implements CacheEngine {
 	public function get_hits() {return $this->hits;}
 	public function get_misses() {return $this->misses;}
 }
+class APCCache implements CacheEngine {
+	var $hits=0, $misses=0;
+
+	public function __construct($args) {}
+
+	public function get($key) {
+		assert(!is_null($key));
+		$val = apc_fetch($key);
+		if($val) {
+			$this->hits++;
+			return $val;
+		}
+		else {
+			$this->misses++;
+			return false;
+		}
+	}
+
+	public function set($key, $val, $time=0) {
+		assert(!is_null($key));
+		apc_store($key, $val, $time);
+	}
+
+	public function delete($key) {
+		assert(!is_null($key));
+		apc_delete($key);
+	}
+
+	public function get_hits() {return $this->hits;}
+	public function get_misses() {return $this->misses;}
+}
 // }}}
 /** @publicsection */
 
@@ -236,7 +271,7 @@ class Database {
 	 * stored in config.php in the root shimmie folder
 	 */
 	public function Database() {
-		global $database_dsn;
+		global $database_dsn, $cache_dsn;
 
 		if(substr($database_dsn, 0, 5) == "mysql") {
 			$this->engine = new MySQL();
@@ -250,11 +285,14 @@ class Database {
 
 		$this->db = @NewADOConnection($database_dsn);
 
-		if(isset($cache)) {
+		if(isset($cache_dsn) && !empty($cache_dsn)) {
 			$matches = array();
-			preg_match("#(memcache)://(.*)#", $cache, $matches);
+			preg_match("#(memcache|apc)://(.*)#", $cache_dsn, $matches);
 			if($matches[1] == "memcache") {
-				$this->cache = new MemCache($matches[2]);
+				$this->cache = new MemcacheCache($matches[2]);
+			}
+			else if($matches[1] == "apc") {
+				$this->cache = new APCCache($matches[2]);
 			}
 		}
 		else {

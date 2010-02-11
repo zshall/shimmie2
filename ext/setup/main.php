@@ -1,4 +1,10 @@
 <?php
+/*
+ * Name: Board Config
+ * Author: Shish
+ * Visibility: admin
+ * Description: Allows the site admin to configure the board to his or her taste
+ */
 
 /* ConfigSaveEvent {{{
  *
@@ -282,7 +288,7 @@ class Setup extends SimpleExtension {
 				}
 			}
 		}
-		log_info("setup", "Configuration updated");
+		log_warning("setup", "Configuration updated");
 	}
 
 	public function onUserBlockBuilding($event) {

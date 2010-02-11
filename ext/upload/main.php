@@ -1,5 +1,11 @@
 <?php
 /*
+ * Name: Uploader
+ * Author: Shish
+ * Description: Allows people to upload files to the website
+ */
+
+/*
  * DataUploadEvent:
  *   $user     -- the user uploading the data
  *   $tmpname  -- the temporary file used for upload
@@ -10,7 +16,9 @@
 class DataUploadEvent extends Event {
 	var $user, $tmpname, $metadata, $hash, $type, $image_id = -1;
 
-	public function DataUploadEvent($user, $tmpname, $metadata) {
+	public function DataUploadEvent(User $user, $tmpname, $metadata) {
+		assert(file_exists($tmpname));
+
 		$this->user = $user;
 		$this->tmpname = $tmpname;
 

@@ -1,4 +1,95 @@
 <?php
+/**
+ * Name: Image List
+ * Author: Shish <webmaster@shishnet.org>
+ * Link: http://code.shishnet.org/shimmie2/
+ * License: GPLv2
+ * Description: Show a list of uploaded images
+ * Documentation:
+ *  Here is a list of the search methods available out of the box;
+ *  Shimmie extensions may provide other filters:
+ *  <ul>
+ *    <li>by tag, eg
+ *      <ul>
+ *        <li>cat
+ *        <li>pie
+ *        <li>somethi* -- wildcards are supported
+ *      </ul>
+ *    <li>size (=, &lt;, &gt;, &lt;=, &gt;=) width x height, eg
+ *      <ul>
+ *        <li>size=1024x768 -- a specific wallpaper size
+ *        <li>size&gt;=500x500 -- no small images
+ *        <li>size&lt;1000x1000 -- no large images
+ *      </ul>
+ *    <li>ratio (=, &lt;, &gt;, &lt;=, &gt;=) width : height, eg
+ *      <ul>
+ *        <li>ratio=4:3, ratio=16:9 -- standard wallpaper
+ *        <li>ratio=1:1 -- square images
+ *        <li>ratio<1:1 -- tall images
+ *        <li>ratio>1:1 -- wide images
+ *      </ul>
+ *    <li>filesize (=, &lt;, &gt;, &lt;=, &gt;=) size, eg
+ *      <ul>
+ *        <li>filesize>1024 -- no images under 1KB
+ *        <li>filesize<=3MB -- shorthand filesizes are supported too
+ *      </ul>
+ *    <li>id (=, &lt;, &gt;, &lt;=, &gt;=) number, eg
+ *      <ul>
+ *        <li>id<20 -- search only the first few images
+ *        <li>id>=500 -- search later images
+ *      </ul>
+ *    <li>user=Username, eg
+ *      <ul>
+ *        <li>user=Shish -- find all of Shish's posts
+ *      </ul>
+ *    <li>hash=md5sum, eg
+ *      <ul>
+ *        <li>hash=bf5b59173f16b6937a4021713dbfaa72 -- find the "Taiga want up!" image
+ *      </ul>
+ *    <li>filetype=type, eg
+ *      <ul>
+ *        <li>filetype=png -- find all PNG images
+ *      </ul>
+ *    <li>filename=blah, eg
+ *      <ul>
+ *        <li>user=kitten -- find all images with "kitten" in the original filename
+ *      </ul>
+ *    <li>posted=date, eg
+ *      <ul>
+ *        <li>posted=2009-12-25 -- find images posted on the 25th December
+ *      </ul>
+ *  </ul>
+ *  <p>Search items can be combined to search for images which match both,
+ *  or you can stick "-" in front of an item to search for things that don't
+ *  match it.
+ *  <p>Some search methods provided by extensions:
+ *  <ul>
+ *    <li>Danbooru API
+ *      <ul>
+ *        <li>md5:[hash] -- same as "hash=", but the API calls it by a different name
+ *      </ul>
+ *    <li>Numeric Score
+ *      <ul>
+ *        <li>score (=, &lt;, &gt;, &lt;=, &gt;=) number -- seach by score
+ *        <li>upvoted_by=Username -- search for a user's likes
+ *        <li>downvoted_by=Username -- search for a user's dislikes
+ *      </ul>
+ *    <li>Image Rating
+ *      <ul>
+ *        <li>rating=se -- find safe and explicit images, ignore questionable and unknown
+ *      </ul>
+ *    <li>Favorites
+ *      <ul>
+ *        <li>favorites (=, &lt;, &gt;, &lt;=, &gt;=) number -- search for images favourited a certain number of times
+ *        <li>favourited_by=Username -- search for a user's choices
+ *      </ul>
+ *    <li>Notes
+ *      <ul>
+ *        <li>notes (=, &lt;, &gt;, &lt;=, &gt;=) number -- search by the number of notes an image has
+ *      </ul>
+ *  </ul>
+ */
+
 /*
  * SearchTermParseEvent:
  * Signal that a search term needs parsing
@@ -140,7 +231,12 @@ class Index extends SimpleExtension {
 		}
 		else if(preg_match("/^posted=(([0-9\*]*)?(-[0-9\*]*)?(-[0-9\*]*)?)$/", $event->term, $matches)) {
 			$val = str_replace("*", "%", $matches[1]);
-			$img_search->append(new Querylet("images.posted LIKE '%$val%'"));
+			$event->add_querylet(new Querylet("images.posted LIKE '%$val%'"));
+		}
+		else if(preg_match("/tags(<|>|<=|>=|=)(\d+)/", $event->term, $matches)) {
+			$cmp = $matches[1];
+			$tags = $matches[2];
+			$event->add_querylet(new Querylet("images.id IN (SELECT DISTINCT image_id FROM image_tags GROUP BY image_id HAVING count(image_id) $cmp $tags)"));
 		}
 	}
 }

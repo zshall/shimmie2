@@ -41,10 +41,10 @@
  * }
  *
  * // ext/hello/test.php
- * public class HelloTest extends ShimmieWebTestCase {
+ * public class HelloTest extends SCoreWebTestCase {
  *     public void testHello() {
  *         $this->get_page("post/list");
- *         $this->assertText("Hello there");
+ *         $this->assert_text("Hello there");
  *     }
  * }
  *
@@ -129,11 +129,9 @@ abstract class DataHandlerExtension implements Extension {
 		if(is_null($this->theme)) $this->theme = get_theme_object($this);
 
 		if(($event instanceof DataUploadEvent) && $this->supported_ext($event->type) && $this->check_contents($event->tmpname)) {
-			$hash = $event->hash;
-			$ha = substr($hash, 0, 2);
 			if(!move_upload_to_archive($event)) return;
 			send_event(new ThumbnailGenerationEvent($event->hash, $event->type));
-			$image = $this->create_image_from_data("images/$ha/$hash", $event->metadata);
+			$image = $this->create_image_from_data(warehouse_path("images", $event->hash), $event->metadata);
 			if(is_null($image)) {
 				throw new UploadException("Data handler failed to create image object from data");
 			}
