@@ -269,7 +269,7 @@ class User_Levels_Punishment extends SimpleExtension {
 		if($event->page_matches("user_levels/slap")) {
 			if($user->is_admin()) {
 				if(isset($_POST['user_id']) && isset($_POST['user_name']) && isset($_POST['points'])) {
-					if($_POST['points'] > 0) {
+					if($_POST['points'] != 0) {
 						$this->slap_user($_POST['user_id'], $_POST['points']);
 						$GLOBALS['punish_user_id'] = $_POST['user_id'];
 						send_event(new UserLevelsPunishmentEvent());
@@ -311,7 +311,7 @@ class User_Levels_Punishment extends SimpleExtension {
 	}
 }
 
-class User_Level_Experience extends SimpleExtension {
+class UserLevelExperience extends SimpleExtension {
 	private function get_level($exp_points, $multiplier) {
 	/**
 	 * If we have exp points, we can find out what level someone is.
@@ -331,58 +331,11 @@ class User_Level_Experience extends SimpleExtension {
 		return $exp_reqd;
 	}
 
-	private function show_exp_bar() {
-	/**
-	 * FINISH THIS TOMORROW!
-	 */
-
-		// Get variables
-		$ulprefs = new DatabasePrefs($database, $userid);
-	
-		$html = '<link type="text/css" href="/contrib/userlevels_base/css/custom-theme/jquery-ui-1.7.2.custom.css" rel="stylesheet" /> 
-		<script type="text/javascript" src="/contrib/userlevels_base/js/jquery-1.3.2.min.js"></script>
-		<script type="text/javascript" src="/contrib/userlevels_base/js/jquery-ui-1.7.2.custom.min.js"></script>';
-		$html .=   '<script type="text/javascript"> 
-				$(function() {
-					$("#progressbar'.$up.'").progressbar({
-						value: '.$pp.'	});
-				});
-				</script>
-				<div align="center"><div id="progressbar'.$up.'" title="'.$pp.'%" style="height: 20px;"></div></div>';
-		$testing = 0;
-		if($testing ==1) {
-		$html .= "<br />User's points level: $up<br />
-			  Level multiplier: $lm<br />
-			  <br />
-			  User's level: $ul<br />
-			  Level $ul's exp: $lc<br />
-			  Next level's exp: $ln<br />
-			  <br />
-			  Points required until next level-up: $pl<br />
-			  Progress bar: $pn / $pm = $pp%";
-		} else {
-		$html .= "<b>User's level: $ul</b><br />
-			  
-			  <br />Experience: $up<br />
-
-			  Points required until next level-up: $pl<br />";
-		}
-		
-		return $html;
-		
-	}
-
 	private function generate_exp_bar($userid) {
 		/**
-		 * In development. Perhaps this should go in the theme file?
-		 *
-		 * Actually... the generating of this file should happen during user level determination!
+		 * Generates the progress bar values.
 		 */
 
-		/**
-		 * This page will get the current user's exp and display it to him/her.
-		 * Include the jQueryUI and related theme files.
-		 */
 		global $config, $database;
 		$ulprefs = new DatabasePrefs($database, $userid);
 		/**
@@ -420,12 +373,13 @@ class User_Level_Experience extends SimpleExtension {
 	
 	public function onUserPageBuilding(Event $event) {
 		global $database, $user, $page;
-		$html = $this->generate_exp_bar($event->display_user->id);
+		$html = $this->theme->display_exp_bar($event->display_user->id);
 		$page->add_block(new Block('Level Stats',$html, "main", 5));
 	}
 	
 	public function onUserLevelsUpdate(Event $event) {
-		if(isset($GLOBALS['user_level_update_id'])) {$this->generate_exp_bar();} else {echo "argh no userid";}
+		if(isset($GLOBALS['user_level_update_id'])) {
+			$this->generate_exp_bar($GLOBALS['user_level_update_id']);} else {echo "argh no userid";}
 	}
 }
 
