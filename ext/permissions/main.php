@@ -18,22 +18,6 @@ class Permissions extends SimpleExtension {
 	 * This section handles the "master list" of permissions.
 	 */
 	
-	public function add_perm($name) {
-		/**
-		 * This simple function adds a permission to the list.
-		 *
-		 * If the permission already exists, don't do this.
-		 */
-		global $database;
-		$exists = $database->get_row("SELECT perm_name FROM permission_list WHERE perm_name = ?", array($name));
-
-		if($exists['perm_name'] != $name) {
-			// Looks good. Let's add it.
-			$database->execute("INSERT INTO `permission_list` (`id`, `perm_name`) VALUES ('', ?)", array($name));
-			echo "Added permission $name.";
-		}
-	}
-	
 	// onEvents go here.
 	
 	public function onInitExt(Event $event) {
@@ -60,20 +44,40 @@ class Permissions extends SimpleExtension {
                 ");
 			$config->set_int("permission_list", 3);
 		}
+		// Send the event and let all the extensions add their permissions.
+		send_event(new PermissionsSetEvent());
 	}
 }
 
-// Null events
-// How do I let these carry variables? :\
-class PermissionsSetEvent extends Event {}
+// Events...
+class PermissionsSetEvent extends Event {
+	/**
+	 * Hm... If we "event-ize" this, it would eliminate the need to
+	 * create a bunch of globals junk. Let's try it ^_^
+	 */
+	public function add_perm($name) {
+		/**
+		 * This simple function adds a permission to the list.
+		 *
+		 * If the permission already exists, don't do this.
+		 */
+		global $database;
+		$exists = $database->get_row("SELECT perm_name FROM permission_list WHERE perm_name = ?", array($name));
+
+		if($exists['perm_name'] != $name) {
+			// Looks good. Let's add it.
+			$database->execute("INSERT INTO `permission_list` (`id`, `perm_name`) VALUES ('', ?)", array($name));
+			log_info("permissions","Added permission $name.");
+		}
+	}
+}
 
 class Permissions_Test extends SimpleExtension {
-	public function onInitExt(Event $event) {
+	public function onPermissionsSet(Event $event) {
 		// This test extension does what all extensions would do if this system is implemented.
 		// Right now, it just sets a permission.
-		// TODO: Make $permissions a global?
-		$perm = new Permissions();
-		$perm->add_perm("Hello World");
+		// This function might make globals unnecessary.
+		$event->add_perm("Hello World");
 	}
 }
 
@@ -103,4 +107,32 @@ class Permissions_Test extends SimpleExtension {
 //		}
 //	}		
 //}
+
+class Groups extends SimpleExtension {
+	public function onInitExt(Event $event) {
+		/**
+		 * OK... we are going to install some tables.
+		 * And by some, I mean one (for now.)
+		 */
+		global $config;
+		$version = $config->get_int("permission_list", 0);
+		/**
+		 * If this version is less than "1", it's time to install.
+		 *
+		 * REMINDER: If I change the database tables, I must change up version by 1.
+		 */
+		 if($version < 1) {
+		 	/**
+		 	* Installer
+		 	*/
+			global $database;
+			$database->create_table("permission_list",
+                "id SCORE_AIPK
+				 , perm_name VARCHAR(128) UNIQUE NOT NULL
+                 , INDEX(id)
+                ");
+			$config->set_int("permission_list", 3);
+		}
+	}
+}
 ?>
