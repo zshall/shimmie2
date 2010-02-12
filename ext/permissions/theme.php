@@ -18,10 +18,9 @@ class GroupEditorTheme extends Themelet {
 
 		$html = "";
 			$table_header =  "<tr>
-						<th>ID</th>
 						<th>Group Name</th>";
 			$add_new = "
-				<tr><td>&nbsp;</td>
+				<tr>
 					<form action='".make_link("groups/add")."' method='POST'>
 						<td><input style='text-align:center;' type='text' name='group_name' /></td>
 						";
@@ -52,7 +51,6 @@ class GroupEditorTheme extends Themelet {
 			$group_name = $groups[$i]['group_name'];
 			
 			$table_rows	 .=  "<tr>
-							<td>$id</td>
 							<td>$group_name</td>";
 							
 			/**
