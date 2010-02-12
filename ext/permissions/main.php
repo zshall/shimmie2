@@ -134,7 +134,7 @@ class Groups extends SimpleExtension {
 		 *
 		 * REMINDER: If I change the database tables, I must change up version by 1.
 		 */
-		 if($version < 2) {
+		 if($version < 1) {
 		 	/**
 		 	* Installer
 		 	*/
@@ -143,9 +143,8 @@ class Groups extends SimpleExtension {
                 "id SCORE_AIPK
 				 , group_name VARCHAR(128) UNIQUE NOT NULL
 				 , group_permissions TEXT
-				 , group_members TEXT
                 ");
-			$config->set_int("group_list", 2);
+			$config->set_int("group_list", 1);
 		}
 	}
 }
@@ -179,24 +178,41 @@ class GroupEditor extends SimpleExtension {
 				 * Argh this will be tough...
 				 */
 				$group_name = $_POST['group_name'];
+				if($group_name == "") { die("No group name!"); }
 				// Get all permissions
 				$permissions = $database->get_all("SELECT * FROM permission_list ORDER BY id ASC");
 				// Now, start a loop...
 				for ($i = 0 ; $i < count($permissions) ; $i++) {
 					$pn = $permissions[$i]['perm_name'];
 					if(isset($_POST["$pn"])) { $pe[] = $pn; }
-					//$pe[] = isset($_POST["$pn"])? "$pn" : ""; // will this work?
 				}
 				
 				for ($i = 0 ; $i < count($pe) ; $i++) {
-				$group_permissions .= $pe[$i];
-				$j = $i+1;
-				if(isset($pe[$j])) { $group_permissions .= ","; } // how about this?
+					$group_permissions .= $pe[$i];
+					$j = $i+1;
+					if(isset($pe[$j])) { $group_permissions .= ","; }
 				}
 				
 				// Now insert into db:
 				$database->Execute("INSERT INTO group_list(id, group_name, group_permissions, group_members) VALUES(?, ? , ?, ?)", array(NULL, $group_name, $group_permissions, NULL));
-				log_info("user_level_editor", "Added User Level: $level_name");
+				log_info("group_editor", "Added Group: $group_name");
+				
+				$page->set_mode("redirect");
+				$page->set_redirect(make_link("groups/editor"));
+			}
+		}
+		
+		if($event->page_matches("groups/remove")) {
+			global $page, $database, $user;
+			if(!$user->is_admin()) {
+				$this->theme->display_permission_denied($page);
+			} else {
+				$id = $_POST['id'];
+				$group_name = $_POST['group_name'];
+				if(!isset($id)) { die("No ID!"); }
+				if(!isset($group_name)) { die("No name!"); }
+				$database->Execute("DELETE FROM group_list WHERE id=$id");
+				log_info("group_editor", "Removed Group: $group_name");
 				
 				$page->set_mode("redirect");
 				$page->set_redirect(make_link("groups/editor"));

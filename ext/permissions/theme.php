@@ -88,7 +88,7 @@ class GroupEditorTheme extends Themelet {
 			
 							
 			$table_rows  .=		"<td>
-								<form action='".make_link("user_levels/remove")."' method='POST'>
+								<form action='".make_link("groups/remove")."' method='POST'>
 									<input type='hidden' name='id' value='$id'>
 									<input type='hidden' name='group_name' value='$group_name'>
 									<input type='submit' value='Remove'>
