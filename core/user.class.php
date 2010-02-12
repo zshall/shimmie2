@@ -15,6 +15,7 @@ class User {
 	var $email;
 	var $join_date;
 	var $admin;
+	var $permissions;
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	* Initialisation                                               *
@@ -120,6 +121,31 @@ class User {
 		$yn = $admin ? 'Y' : 'N';
 		$database->Execute("UPDATE users SET admin=? WHERE id=?", array($yn, $this->id));
 		log_info("core-user", "Made {$this->name} admin=$yn");
+	}
+	
+	/**
+	 * Zach: Added can() function: can(a user do $something)?
+	 *		 Added get_permissions_for_user function: less database connections this way.
+	 */
+	private function get_permissions_for_user($userid) {
+		/**
+		 * This function isn't $user->can(), but rather will be implemented by it.
+		 * We will:
+		 *		Get preferences for $userid;
+		 *		Get a list of permissions for group $prefs->get_string("user_group");
+		 *		Set these as an array: $up and return.
+		 */
+		global $database;
+		$user_group_prefs = new DatabasePrefs($database, $userid);
+		$user_group = $user_group_prefs->get_string("user_group", "default");
+		$user_permissions = $database->get_row("SELECT group_permissions FROM group_list WHERE group_name = ?", array($user_group));
+		$up = explode(",", $user_permissions['group_permissions']);
+		return $up;
+	}
+	
+	public function can($do_something) {
+		$perm_array = $this->get_permissions_for_user($this->id);
+		if(in_array($do_something, $perm_array)) { return true; } else { return false; }
 	}
 
 	public function set_password($password) {

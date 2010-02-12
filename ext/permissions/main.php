@@ -20,7 +20,10 @@ class Permissions extends SimpleExtension {
 	 */
 	
 	// onEvents go here.
-	
+	//public function onPermissionsSet(Event $event) {
+		//$event->add_perm("do_admin_stuff", "Edit Board Config");
+	//}
+		
 	public function onInitExt(Event $event) {
 		/**
 		 * OK... we are going to install some tables.
@@ -33,7 +36,7 @@ class Permissions extends SimpleExtension {
 		 *
 		 * REMINDER: If I change the database tables, I must change up version by 1.
 		 */
-		 if($version < 2) {
+		 if($version < 1) {
 		 	/**
 		 	* Installer
 		 	*/
@@ -43,7 +46,7 @@ class Permissions extends SimpleExtension {
 				 , perm_name VARCHAR(128) UNIQUE NOT NULL
 				 , perm_desc TEXT
                 ");
-			$config->set_int("permission_list", 2);
+			$config->set_int("permission_list", 1);
 		}
 		// Send the event and let all the extensions add their permissions.
 		send_event(new PermissionsSetEvent());
@@ -80,17 +83,28 @@ class Permissions_Test extends SimpleExtension {
 		// This test extension does what all extensions would do if this system is implemented.
 		// Right now, it just sets a few permissions that would be deemed necessary, but should be set elsewhere, such as in the extensions themselves.
 		// This function might make globals unnecessary.
-		$event->add_perm("can_post", "Post");
-		$event->add_perm("can_comment", "Comment");
-		$event->add_perm("can_delete_posts", "Delete Posts");
-		$event->add_perm("can_delete_comments", "Delete Comments");
-		$event->add_perm("can_bulk_upload", "Bulk Upload");
+		$event->add_perm("post", "Post");
+		$event->add_perm("comment", "Comment");
+		$event->add_perm("delete_posts", "Delete Posts");
+		$event->add_perm("delete_comments", "Delete Comments");
+		$event->add_perm("bulk_upload", "Bulk Upload");
+	}
+	public function onPageRequest(Event $event) {
+		if($event->page_matches("permissions/test")) {
+			global $user, $page;
+			
+			if($user->can("post")) { echo "Yes."; } else { echo "No."; }
+			$page->set_mode("data");
+			$page->set_data("&nbsp;");
+		}
 	}
 }
 
 //class Permissions_Config extends SimpleExtension {
 //	/**
 //	 * This class handles configuration of the Permissions system.
+//	 *
+//	 * I'm not sure that there is anything to configure, actually.
 //	 */
 //	
 //	public function onSetupBuilding($event) {
@@ -118,9 +132,9 @@ class Permissions_Test extends SimpleExtension {
 class Groups extends SimpleExtension {
 	/**
 	 * Functions of the groups extension:
-	 *		+ Install the groups table (this class)
-	 *		+ Group Editor (GroupEditor class)
-	 *		+ Assigning permissions to a member of a group
+	 *		+ Install the groups table (this class) (DONE.)
+	 *		+ Group Editor (GroupEditor class) (DONE.)
+	 *		+ Assigning permissions to a member of a group (WIP.)
 	 */
 	public function onInitExt(Event $event) {
 		/**
@@ -144,6 +158,7 @@ class Groups extends SimpleExtension {
 				 , group_name VARCHAR(128) UNIQUE NOT NULL
 				 , group_permissions TEXT
                 ");
+			$database->Execute("INSERT INTO group_list(id, group_name, group_permissions) VALUES(?, ? , ?)", array(NULL, "default", NULL));
 			$config->set_int("group_list", 1);
 		}
 	}
@@ -194,7 +209,7 @@ class GroupEditor extends SimpleExtension {
 				}
 				
 				// Now insert into db:
-				$database->Execute("INSERT INTO group_list(id, group_name, group_permissions, group_members) VALUES(?, ? , ?, ?)", array(NULL, $group_name, $group_permissions, NULL));
+				$database->Execute("INSERT INTO group_list(id, group_name, group_permissions) VALUES(?, ? , ?)", array(NULL, $group_name, $group_permissions));
 				log_info("group_editor", "Added Group: $group_name");
 				
 				$page->set_mode("redirect");
@@ -217,6 +232,13 @@ class GroupEditor extends SimpleExtension {
 				$page->set_mode("redirect");
 				$page->set_redirect(make_link("groups/editor"));
 			}
+		}
+	}
+	
+	public function onUserBlockBuilding(Event $event) {
+		global $user;
+		if($user->is_admin()) {
+			$event->add_link("Group Editor", make_link("groups/editor"));
 		}
 	}
 }
