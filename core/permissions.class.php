@@ -14,7 +14,7 @@ interface Permission {
 	/**
 	 * Sets a default permission
 	 */
-	//public function set_perm($group_name, $perm_name, $set=true);
+	public function set_perm($group_name, $perm_name, $set=true);
 	
 	/**
 	 * Gets the entire list of permissions (?)
@@ -34,9 +34,25 @@ abstract class BasePermission implements Permission {
 	public function add_perm($perm_name, $perm_desc) {
 		$this->values[] = array("perm_name" => $perm_name, "perm_desc" => $perm_desc);
 	}
-//	public function set_perm($group_name, $perm_name, $set=true) {
-//		// Not sure if this should be here. Not even sure what I'm doing.
-//	}
+	public function set_perm($group_name, $perm_name, $set=true) {
+		// I think I've figured it out.
+		// This will append $perm_name to the end of `group_permissions`
+		global $database;
+		$get_current_permissions = $database->get_row("SELECT group_permissions FROM group_list WHERE group_name = ?", array($group_name));
+		$perm_array = explode(",",$get_current_permissions["group_permissions"]);
+		if(!in_array($perm_name, $perm_array)) {
+			if($set == true) {
+				$current_perms = $get_current_permissions["group_permissions"];
+				$group_permissions = $current_perms.",".$perm_name;
+				$database->Execute("UPDATE `group_list` SET `group_permissions` = ? WHERE `group_name` = ?", array($group_permissions, $group_name));
+				log_info("permissions","Set default $perm_name for group $group_name");
+			}
+		} else {
+			if($set == false) {
+				// Code to remove it from the array.
+			}
+		}
+	}
 	public function get_perms() {
 		return $this->values;
 	}
