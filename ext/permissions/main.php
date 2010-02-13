@@ -101,10 +101,11 @@ class Permissions_Test extends SimpleExtension {
 
 class GlobalPermissionTest extends SimpleExtension {
 	public function onInitExt(Event $event) {
-		// This is very good.
+		// Ran through clean... next test.
 		global $permissions;
-		$hi = $permissions->hellow();
-		echo $hi;
+		$permissions->add_perm("test permission","test description");
+		$all_perms = $permissions->get_perms();
+		echo $all_perms[0]["perm_name"].": ".$all_perms[0]["perm_desc"];
 	}
 }
 
