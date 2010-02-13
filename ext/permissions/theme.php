@@ -63,8 +63,8 @@ class GroupEditorTheme extends Themelet {
 			$group_list .= "<table id='$group_name' class='zebra'><thead>";
 			// Now add the group name
 			$group_list	.=  "<tr><td colspan='4'><span style='font-size:110%; font-weight:bold;'>$group_name</span></td></tr></thead><tbody>
-			<form action='".make_link("groups/edit")."' method='POST'>";
-							
+			<form action='".make_link("groups/change")."' method='POST'>
+			<input type='hidden' name='id' value='$id'>";
 			/**
 			 * How do we figure out if all these permissions are set?
 			 * Explode... something.

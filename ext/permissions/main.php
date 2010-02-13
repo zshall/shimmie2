@@ -100,35 +100,6 @@ class Permissions_Test extends SimpleExtension {
 	}
 }
 
-//class Permissions_Config extends SimpleExtension {
-//	/**
-//	 * This class handles configuration of the Permissions system.
-//	 *
-//	 * I'm not sure that there is anything to configure, actually.
-//	 */
-//	
-//	public function onSetupBuilding($event) {
-//		$sb = new SetupBlock("User Levels");
-//		/**
-//		 * We'll have something here soon.
-//		 */
-//		$event->panel->add_block($sb);
-//	}
-//	/**
-//	 * When we view the user's prefrerences page, if we are admin, show the... something.
-//	 */
-//	public function onPrefBuilding($event) {
-//		global $user, $config;
-//		if($user->is_admin()) {
-//			$pb = new PrefBlock("User Level");
-//			/**
-//			 * We'll have something here soon.
-//			 */
-//			$event->panel->add_block($pb);
-//		}
-//	}		
-//}
-
 class Groups extends SimpleExtension {
 	/**
 	 * Functions of the groups extension:
@@ -219,6 +190,43 @@ class GroupEditor extends Groups {
 				$page->set_redirect(make_link("groups/editor"));
 			}
 		}
+
+		if($event->page_matches("groups/change")) {
+			/**
+			 * Changes a group's permissions
+			 */
+			global $page, $database, $user;
+			if(!$user->is_admin()) {
+				$this->theme->display_permission_denied($page);
+			} else {
+				/**
+				 * Slightly easier the second time around, though
+				 */
+				$id = $_POST['id'];
+				if($id == "") { die("No ID!"); }
+				// Get all permissions
+				$permissions = $database->get_all("SELECT * FROM permission_list ORDER BY id ASC");
+				// Now, start a loop...
+				for ($i = 0 ; $i < count($permissions) ; $i++) {
+					$pn = $permissions[$i]['perm_name'];
+					if(isset($_POST["$pn"])) { $pe[] = $pn; }
+				}
+				
+				for ($i = 0 ; $i < count($pe) ; $i++) {
+					$group_permissions .= $pe[$i];
+					$j = $i+1;
+					if(isset($pe[$j])) { $group_permissions .= ","; }
+				}
+				
+				// Now update the DB's records:
+				$database->Execute("UPDATE `group_list` SET `group_permissions` = ? WHERE `id` = ?", array($group_permissions, $id));
+				log_info("group_editor", "Added Group: $group_name");
+				
+				$page->set_mode("redirect");
+				$page->set_redirect(make_link("groups/editor"));
+			}
+		}
+		
 		
 		if($event->page_matches("groups/remove")) {
 			global $page, $database, $user;
