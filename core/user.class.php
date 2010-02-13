@@ -15,7 +15,7 @@ class User {
 	var $email;
 	var $join_date;
 	var $admin;
-	var $permissions;
+	//var $permissions;
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	* Initialisation                                               *
