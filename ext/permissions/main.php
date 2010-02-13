@@ -51,14 +51,18 @@ class Permissions_Test extends SimpleExtension {
 
 class GlobalPermissionTest extends SimpleExtension {
 	public function onPermissionScan(Event $event) {
-		// Ran through clean... next test.
 		global $permissions;
 		$permissions->add_perm("test_perm","testdescription");
-		$permissions->set_perm("user","test_perm",true);
-		//$all_perms = $permissions->get_perms();
-//		for ($i = 0 ; $i < count($all_perms) ; $i++) {
-//			echo $all_perms[$i]["perm_name"].": ".$all_perms[$i]["perm_desc"];
-//		}
+	}
+	public function onInitExt(Event $event) {
+		global $permissions, $config;
+		$version = $config->get_int("test_perm_ext", 0);
+		 if($version < 1) {
+				$permissions->set_perm("anonymous","test_perm",true);
+				$permissions->set_perm("user","test_perm",true);
+				$permissions->set_perm("admin","test_perm",true);
+				$config->set_int("test_perm_ext", 1);
+		}
 	}
 }
 
