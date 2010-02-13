@@ -137,7 +137,7 @@ class User {
 		 */
 		global $database;
 		$user_group_prefs = new DatabasePrefs($database, $userid);
-		$user_group = $user_group_prefs->get_string("user_group", "default");
+		$user_group = $user_group_prefs->get_string("user_group", "user");
 		$user_permissions = $database->get_row("SELECT group_permissions FROM group_list WHERE group_name = ?", array($user_group));
 		$up = explode(",", $user_permissions['group_permissions']);
 		return $up;
