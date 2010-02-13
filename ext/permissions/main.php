@@ -49,12 +49,12 @@ class Permissions extends SimpleExtension {
 			$config->set_int("permission_list", 1);
 		}
 		// Send the event and let all the extensions add their permissions.
-		send_event(new PermissionsSetEvent());
+		send_event(new PermissionScanEvent());
 	}
 }
 
 // Events...
-class PermissionsSetEvent extends Event {
+class PermissionScanEvent extends Event {
 	/**
 	 * Hm... If we "event-ize" this, it would eliminate the need to
 	 * create a bunch of globals junk. Let's try it ^_^
@@ -79,10 +79,9 @@ class PermissionsSetEvent extends Event {
 }
 
 class Permissions_Test extends SimpleExtension {
-	public function onPermissionsSet(Event $event) {
+	public function onPermissionScan(Event $event) {
 		// This test extension does what all extensions would do if this system is implemented.
 		// Right now, it just sets a few permissions that would be deemed necessary, but should be set elsewhere, such as in the extensions themselves.
-		// This function might make globals unnecessary.
 		$event->add_perm("post", "Post");
 		$event->add_perm("comment", "Comment");
 		$event->add_perm("delete_posts", "Delete Posts");
@@ -220,7 +219,7 @@ class GroupEditor extends Groups {
 				
 				// Now update the DB's records:
 				$database->Execute("UPDATE `group_list` SET `group_permissions` = ? WHERE `id` = ?", array($group_permissions, $id));
-				log_info("group_editor", "Added Group: $group_name");
+				log_info("group_editor", "Updated Group Info: $group_name");
 				
 				$page->set_mode("redirect");
 				$page->set_redirect(make_link("groups/editor"));
