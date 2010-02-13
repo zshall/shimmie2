@@ -61,6 +61,13 @@ TABLE.zebra TR TD {border-bottom: 1px solid #DDD;}
 TABLE.zebra TR.odd {background: #EFEFEF;}
 TABLE.zebra TR.even {background: #E0E0E0;}
 
+/**
+ * Zach: Added this for use with the group editor.
+ */
+TABLE.zebra TD.odd {background: #EFEFEF;}
+TABLE.zebra TD.even {background: #E0E0E0;}
+.group_edit_submit {width:45%;}
+
 #footer {
 	clear: both;
 	padding: 8px;
