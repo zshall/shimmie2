@@ -99,6 +99,15 @@ class Permissions_Test extends SimpleExtension {
 	}
 }
 
+class GlobalPermissionTest extends SimpleExtension {
+	public function onInitExt(Event $event) {
+		// This is very good.
+		global $permissions;
+		$hi = $permissions->hellow();
+		echo $hi;
+	}
+}
+
 class Groups extends SimpleExtension {
 	/**
 	 * Functions of the groups extension:

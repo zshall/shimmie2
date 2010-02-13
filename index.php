@@ -85,6 +85,7 @@ try {
 	$config = new DatabaseConfig($database);
 	$user = _get_user($config, $database);
 	$userprefs = new DatabasePrefs($database, $user->id);
+	$permissions = new GlobalPermission();
 	// load the theme parts
 	$_theme = $config->get_string("theme", "default");
 	if(!file_exists("themes/$_theme")) $_theme = "default";
