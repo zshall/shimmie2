@@ -158,13 +158,16 @@ class Groups extends SimpleExtension {
 				 , group_name VARCHAR(128) UNIQUE NOT NULL
 				 , group_permissions TEXT
                 ");
-			$database->Execute("INSERT INTO group_list(id, group_name, group_permissions) VALUES(?, ? , ?)", array(NULL, "default", NULL));
+			$database->Execute("INSERT INTO group_list(id, group_name, group_permissions) VALUES(?, ? , ?)", array(NULL, "anonymous", NULL));
+			$database->Execute("INSERT INTO group_list(id, group_name, group_permissions) VALUES(?, ? , ?)", array(NULL, "user", NULL));
+			$database->Execute("INSERT INTO group_list(id, group_name, group_permissions) VALUES(?, ? , ?)", array(NULL, "admin", NULL));
+
 			$config->set_int("group_list", 1);
 		}
 	}
 }
 
-class GroupEditor extends SimpleExtension {
+class GroupEditor extends Groups {
 	public function onPageRequest(Event $event) {
 		if($event->page_matches("groups/editor")) {
 		/**
@@ -241,5 +244,28 @@ class GroupEditor extends SimpleExtension {
 			$event->add_link("Group Editor", make_link("groups/editor"));
 		}
 	}
+}
+
+class GroupConfig extends Groups {
+	/**
+	 * This class handles configuration of the Groups system.
+	 */
+	public function onPrefBuilding($event) {
+		/**
+		 * When we view the user's prefrerences page, if we are admin, show the... something.
+		 */
+		global $user, $config, $database;
+		if($user->is_admin()) {
+			$groups = $database->get_all("SELECT * FROM group_list ORDER BY id ASC");
+
+			for ($i = 0 ; $i < count($groups) ; $i++) {
+				$gn[] = $groups[$i]['group_name'];
+			}
+
+			$pb = new PrefBlock("User Group");
+			$pb->add_db_array("user_group", $gn, "<br />User group: ");
+			$event->panel->add_block($pb);
+		}
+	}		
 }
 ?>

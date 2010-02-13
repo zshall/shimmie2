@@ -144,6 +144,25 @@ class PrefBlock extends Block {
 		$this->body .= $html;
 	}
 
+	public function add_db_array($name, $options, $label=null) {
+		global $prefs_setup;
+		$current = $prefs_setup->get_string($name);
+
+		if(!is_null($label)) {
+			$this->body .= "<label for='$name'>$label</label>";
+		}
+		$html = "<select id='$name' name='_userprefs_$name'>";
+		foreach($options as $optval) {
+			if($optval == $current) $selected=" selected";
+			else $selected="";
+			$html .= "<option value='$optval'$selected>$optval</option>\n";
+		}
+		$html .= "</select>";
+		$this->body .= "<input type='hidden' name='_type_$name' value='string'>\n";
+
+		$this->body .= $html;
+	}
+
 	public function add_multichoice_option($name, $options, $label=null) {
 		global $prefs_setup;
 		$current = $prefs_setup->get_array($name);
