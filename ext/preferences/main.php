@@ -2,7 +2,7 @@
 /*
  * Name: User Preferences
  * Author: Zach Hall <zach@sosguy.net>
- * Visibility: admin
+ * Visibility: user, admin (extended)
  * Description: Allows the user to configure user-configurable settings to his or her taste.
  *				Cheap renaming hack of Shish's setup extension!!
  */
