@@ -14,7 +14,7 @@ class UserPrefsSetupTheme extends Themelet {
 	 *
 	 * The page should wrap all the options in a form which links to preferences_save
 	 */
-	public function display_page(Page $page, PrefPanel $panel, $userid) {
+	public function display_page(Page $page, PrefPanel $panel, $userid, $username) {
 		$prefblock_html1 = "";
 		$prefblock_html2 = "";
 
@@ -42,7 +42,7 @@ class UserPrefsSetupTheme extends Themelet {
 		}
 
 		$table = "
-			<form action='".make_link("preferences/$userid/save")."' method='POST'><table>
+			<form action='".make_link("preferences/$username/save")."' method='POST'><table>
 			<tr><td>$prefblock_html1</td><td>$prefblock_html2</td></tr>
 			<tr><td colspan='2'><input type='submit' value='Save Settings'></td></tr>
 			</table></form>
@@ -80,7 +80,7 @@ class UserPrefsSetupTheme extends Themelet {
 				$(\"#settings\").tablesorter();
 			});
 			</script>
-			<form action='".make_link("preferences/save")."' method='POST'><table id='settings' class='zebra'>
+			<form action='".make_link("preferences/$username/save")."' method='POST'><table id='settings' class='zebra'>
 				<thead><tr><th width='25%'>Name</th><th>Value</th></tr></thead>
 				<tbody>$rows</tbody>
 				<tfoot><tr><td colspan='2'><input type='submit' value='Save Settings'></td></tr></tfoot>

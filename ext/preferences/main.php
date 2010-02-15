@@ -198,9 +198,13 @@ class UserPrefsSetup extends SimpleExtension {
 		global $prefs_setup, $page, $user, $database;
 		if($event->page_matches("preferences")) { // Ah-ha! Here's how we do it.
 			if($event->get_arg(0) == NULL) {
-				$this->theme->display_error($page, ";_;", "Can't view this page directly (for now?) go to /preferences/[userid]");
+				$display_user = User::by_name($user->name);
 			} else {
-				$GLOBALS['uid-preferences'] = int_escape($event->get_arg(0)); // Need this first.
+				$display_user = User::by_name($event->get_arg(0)); 
+			}
+			
+			if(is_null($display_user)) { $this->theme->display_error($page, ";_;", "Did you enter a proper username?"); } else {
+				$GLOBALS['uid-preferences'] = int_escape($display_user->id); // Need this first.
 				$user_id_preferences = $GLOBALS['uid-preferences'];
 				if($user->id != $user_id_preferences && !$user->is_admin()) { $this->theme->display_error($page, ";_;", "Who do you think you are?"); }
 				else {
@@ -214,7 +218,7 @@ class UserPrefsSetup extends SimpleExtension {
 							$prefs_setup->save_prefs(NULL, $user_id_preferences);
 		
 							$page->set_mode("redirect");
-							$page->set_redirect(make_link("preferences/$user_id_preferences"));
+							$page->set_redirect(make_link("preferences/{$display_user->name}"));
 						}
 						else if($event->get_arg(1) == "advanced") {
 							//$this->theme->display_advanced($page, $prefs_setup->values); //Uncomment for debugging.
@@ -223,7 +227,7 @@ class UserPrefsSetup extends SimpleExtension {
 						else {
 							$panel = new PrefPanel();
 							send_event(new PrefBuildingEvent($panel));
-							$this->theme->display_page($page, $panel, $user_id_preferences);
+							$this->theme->display_page($page, $panel, $user_id_preferences, $display_user->name);
 						}
 					}
 				}
@@ -274,7 +278,7 @@ class UserPrefsSetup extends SimpleExtension {
 
 	public function onUserBlockBuilding($event) {
 		global $user;
-		$userid = $user->id;
+		$userid = $user->name;
 			$event->add_link("Preferences", make_link("preferences/$userid"));
 	}
 }
