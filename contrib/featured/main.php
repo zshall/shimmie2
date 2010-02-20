@@ -17,20 +17,56 @@
  *  can set your desktop wallpaper to be the download URL, refreshed
  *  every couple of hours.
  */
-
+/**
+ * Zach: going to a table of featured images, so we can recall them later.
+ */
 class Featured extends SimpleExtension {
 	public function onInitExt($event) {
 		global $config;
 		$config->set_default_int('featured_id', 0);
+
+		/**
+		 * Zach: Installing data tables.
+		 */
+		global $config;
+		$version = $config->get_int("featured_version", 0);
+		/**
+		 * If this version is less than "1", it's time to install.
+		 *
+		 * REMINDER: If I change the database tables, I must change up version by 1.
+		 */
+		 if($version < 1) {
+		 	/**
+		 	* Installer
+		 	*/
+			global $database, $config;
+			$database->create_table("featured",
+				 "id SCORE_AIPK
+				 , feature_date SCORE_DATETIME DEFAULT SCORE_NOW
+				 , feature_image_id INTEGER NOT NULL
+				 , feature_best SCORE_BOOL NOT NULL DEFAULT SCORE_BOOL_N");
+			log_info("featured", "Upgraded Featured Image Extension");
+			$config->set_int("featured_version", 1);
+		}
+		// Set default config:
+		// [none for now]
 	}
 
 	public function onPageRequest($event) {
-		global $config, $page, $user;
+		global $config, $page, $user, $database;
 		if($event->page_matches("featured_image")) {
 			if($event->get_arg(0) == "set") {
 				if($user->is_admin() && isset($_POST['image_id'])) {
+					/* Zach: add this image to a table! */
+					$yn = "N";
+					if(isset($_POST['best'])) { $yn = "Y"; }
 					$id = int_escape($_POST['image_id']);
 					if($id > 0) {
+						$exists = $database->get_row("SELECT * FROM featured WHERE feature_image_id = $id");
+						if(!isset($exists)) {
+							$database->execute("INSERT into featured (id, feature_date, feature_image_id, feature_best) VALUES (?,now(),?,?)",
+									   array(NULL,$id, $yn));
+						}
 						$config->set_int("featured_id", $id);
 						$page->set_mode("redirect");
 						$page->set_redirect(make_link("post/view/$id"));
@@ -51,6 +87,22 @@ class Featured extends SimpleExtension {
 					send_event(new DisplayingImageEvent($image, $page));
 				}
 			}
+		}
+		if($event->page_matches("helloworld")) {
+			global $page;
+			$page->set_mode("data");
+			$image = Image::by_random();
+			$abc = file_get_contents($image->get_image_filename());
+			$html = "<img src='$abc' />";
+			$page->set_data($html);
+		}
+	}
+	
+	public function onSearchTermParse($event) {
+		$matches = array();
+		if(preg_match("/featured_list/i", $event->term, $matches)) {
+			global $database;
+			$event->add_querylet(new Querylet("images.id IN (SELECT feature_image_id FROM featured ORDER BY feature_date DESC)"));
 		}
 	}
 
