@@ -17,14 +17,17 @@ class AdminPageTheme extends Themelet {
 	 *  'purge unused tags'
 	 */
 	public function display_form(Page $page) {
+		global $user;
+		$sqldump = "";
+		if($user->can("export_sql")) {$sqldump = "<option value='database dump'>Download database contents</option>
+					<option value='convert to innodb'>Convert database to InnoDB (MySQL only)</option>";}
 		$html = "
 			<p><form action='".make_link("admin_utils")."' method='POST'>
 				<select name='action'>
 					<option value='lowercase all tags'>All tags to lowercase</option>
 					<option value='recount tag use'>Recount tag use</option>
 					<option value='purge unused tags'>Purge unused tags</option>
-					<option value='database dump'>Download database contents</option>
-					<option value='convert to innodb'>Convert database to InnoDB (MySQL only)</option>
+					$sqldump
 				</select>
 				<input type='submit' value='Go'>
 			</form>

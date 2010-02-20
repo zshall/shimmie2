@@ -35,6 +35,26 @@ class AdminBuildingEvent extends Event {
 	}
 }
 
+class AdminPermissions extends SimpleExtension {
+/**
+ * Zach: permissions system development.
+ */
+	public function onPermissionScan(Event $event) {
+		global $permissions;
+		$permissions->add_perm("manage_admin","Use admin tools");
+		$permissions->add_perm("export_sql","Export SQL Data");
+	}
+	public function onInitExt(Event $event) {
+		global $permissions, $config;
+		$version = $config->get_int("pdef_admin", 0);
+		 if($version < 1) {
+				$permissions->set_perm("admin","manage_admin",true);
+				$permissions->set_perm("admin","export_sql",true);
+				$config->set_int("pdef_admin", 1);
+		}
+	}
+}
+
 class AdminPage implements Extension {
 	var $theme;
 
@@ -43,7 +63,7 @@ class AdminPage implements Extension {
 		if(is_null($this->theme)) $this->theme = get_theme_object($this);
 
 		if(($event instanceof PageRequestEvent) && $event->page_matches("admin")) {
-			if(!$user->is_admin()) {
+			if(!$user->can("manage_admin")) {
 				$this->theme->display_permission_denied($page);
 			}
 			else {
@@ -52,7 +72,7 @@ class AdminPage implements Extension {
 		}
 
 		if(($event instanceof PageRequestEvent) && $event->page_matches("admin_utils")) {
-			if($user->is_admin()) {
+			if($user->can("manage_admin")) {
 				log_info("admin", "Util: {$_POST['action']}");
 				set_time_limit(0);
 				$redirect = false;
@@ -75,7 +95,9 @@ class AdminPage implements Extension {
 						$redirect = true;
 						break;
 					case 'database dump':
-						$this->dbdump($page);
+						if($user->can("export_sql")) {
+							$this->dbdump($page);
+						}
 						break;
 				}
 
@@ -92,7 +114,7 @@ class AdminPage implements Extension {
 		}
 
 		if($event instanceof UserBlockBuildingEvent) {
-			if($user->is_admin()) {
+			if($user->can("manage_admin")) {
 				$event->add_link("Board Admin", make_link("admin"));
 			}
 		}
@@ -120,26 +142,30 @@ class AdminPage implements Extension {
 	}
 
 	private function dbdump($page) {
-		include "config.php";
-
-		$matches = array();
-		preg_match("#(\w+)://(\w+):(\w+)@([\w\.\-]+)/([\w_]+)(\?.*)?#", $database_dsn, $matches);
-		$software = $matches[1];
-		$username = $matches[2];
-		$password = $matches[3];
-		$hostname = $matches[4];
-		$database = $matches[5];
-
-		switch($software) {
-			case 'mysql':
-				$cmd = "mysqldump -h$hostname -u$username -p$password $database";
-				break;
+		if(!$user->can("export_sql")) {
+			$this->theme->display_permission_denied($page);
+		} else {
+			include "config.php";
+	
+			$matches = array();
+			preg_match("#(\w+)://(\w+):(\w+)@([\w\.\-]+)/([\w_]+)(\?.*)?#", $database_dsn, $matches);
+			$software = $matches[1];
+			$username = $matches[2];
+			$password = $matches[3];
+			$hostname = $matches[4];
+			$database = $matches[5];
+	
+			switch($software) {
+				case 'mysql':
+					$cmd = "mysqldump -h$hostname -u$username -p$password $database";
+					break;
+			}
+	
+			$page->set_mode("data");
+			$page->set_type("application/x-unknown");
+			$page->set_filename('shimmie-'.date('Ymd').'.sql');
+			$page->set_data(shell_exec($cmd));
 		}
-
-		$page->set_mode("data");
-		$page->set_type("application/x-unknown");
-		$page->set_filename('shimmie-'.date('Ymd').'.sql');
-		$page->set_data(shell_exec($cmd));
 	}
 
 	private function check_for_orphanned_images() {
