@@ -228,7 +228,7 @@ class SimpleBlogRSS extends SimpleExtension {
 	}
 
 	public function onPageRequest($event) {
-            global $config, $database;
+            global $config, $database, $user;
             if($event->page_matches("rss/blog")) {
                 if($user->can("view_blog")) {
                     if(is_null($event->get_arg(0))||$event->get_arg(0)<=0) {
