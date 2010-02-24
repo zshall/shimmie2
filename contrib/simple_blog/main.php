@@ -155,8 +155,8 @@ class SimpleBlog extends SimpleExtension {
                     } else {
                             $id = int_escape($_POST['id']);
                             if(!isset($id)) { die("No ID!"); }
-                            $database->Execute("DELETE FROM blotter WHERE id=?", array($id));
-                            log_info("simple_blog", "Removed Entry #$id");
+                            $database->Execute("DELETE FROM simple_blog WHERE id=?", array($id));
+                            log_info("simple_blog", "Removed Post #$id");
                             $page->set_mode("redirect");
                             $page->set_redirect(make_link("blog_manager"));
                     }
