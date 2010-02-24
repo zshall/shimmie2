@@ -118,45 +118,13 @@ abstract class BasePrefs implements UserPrefs {
 	}
 }
 
-
 /**
- * Loads the config list from a PHP file; the file should be in the format:
- *
- *  <?php
- *  $config['foo'] = "bar";
- *  $config['baz'] = "qux";
- *  ?>
- *  Unnecessary for what we're doing here... since it's different
- *  for every user, we wouldn't need static anything.
- */
-/*class StaticPrefs extends BasePrefs {
-	public function __construct($filename) {
-		if(file_exists($filename)) {
-			require_once $filename;
-			if(isset($config)) {
-				$this->values = $config;
-			}
-			else {
-				throw new Exception("Config file '$filename' doesn't contain any config");
-			}
-		}
-		else {
-			throw new Exception("Config file '$filename' missing");
-		}
-	}
-
-	public function save_prefs($name=null) {
-		// static config is static
-	}
-}*/
-
-
-/**
- * Loads the config list from a table in a given database, the table should
- * be called config and have the schema:
+ * Loads the preferences from a table in a given database, the table should
+ * be called user_prefs and have the schema:
  *
  * \code
- *  CREATE TABLE config(
+ *  CREATE TABLE user_prefs(
+ *  	user_id INTEGER NOT NULL,
  *      name VARCHAR(255) NOT NULL,
  *      value TEXT
  *  );
@@ -184,7 +152,10 @@ class DatabasePrefs extends BasePrefs {
 	 * Save the current values for the current user.
 	 */
 	public function save_prefs($name=null, $uid=null) {
-
+		if(is_null($uid)) {
+			global $user;
+			$uid = $user->id;
+		}
 		if(is_null($name)) {
 			foreach($this->values as $name => $value) {
 				$this->save_prefs($name);
@@ -192,7 +163,7 @@ class DatabasePrefs extends BasePrefs {
 		}
 		else {
 			$this->database->Execute("DELETE FROM user_prefs WHERE name = ? AND user_id = ?", array($name, $uid));
-			$this->database->Execute('DELETE FROM user_prefs WHERE user_id = "0"'); // Hack... O_o
+			$this->database->Execute('DELETE FROM user_prefs WHERE user_id = "0"');
 			$this->database->Execute("INSERT INTO  `user_prefs` (  `user_id` ,  `name` ,  `value` ) VALUES ('$uid',  '$name',  '".$this->values[$name]."')");
 		}
 		$this->database->cache->delete("user_prefs");
