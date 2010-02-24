@@ -27,7 +27,7 @@ class Permissions extends SimpleExtension {
 // Events...
 class PermissionScanEvent extends Event {}
 
-class Permissions_Test extends SimpleExtension {
+/*class Permissions_Test extends SimpleExtension {
 	public function onPermissionScan(Event $event) {
 		// This test extension does what all extensions would do if this system is implemented.
 		// Right now, it just sets a few permissions that would be deemed necessary, but should be set elsewhere, such as in the extensions themselves.
@@ -64,7 +64,7 @@ class GlobalPermissionTest extends SimpleExtension {
 				$config->set_int("test_perm_ext", 1);
 		}
 	}
-}
+}*/
 
 class Groups extends SimpleExtension {
 	/**
@@ -136,7 +136,7 @@ class GroupEditor extends Groups {
 				$group_name = $_POST['group_name'];
 				if($group_name == "") { die("No group name!"); }
 				// Get all permissions
-				$all_perms = $database->get_all("SELECT * FROM permission_list ORDER BY id ASC");
+				$all_perms = $permissions->get_perms();
 				// Now, start a loop...
 				for ($i = 0 ; $i < count($all_perms) ; $i++) {
 					$pn = $all_perms[$i]['perm_name'];
