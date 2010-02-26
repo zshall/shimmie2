@@ -1,16 +1,20 @@
 <?php
 /**
- * \mainpage Shimmie2 / SCore Documentation
+ * \mainpage SCore Documentation
  *
- * SCore is a framework designed for writing flexible, extendable applications.
+ *
+ * Shish wrote:
+ * "SCore is a framework designed for writing flexible, extendable applications.
  * Whereas most PHP apps are built monolithicly, score's event-based nature
  * allows parts to be mixed and matched. For instance, the most famous
- * collection of score extensions is the Shimmie image board, which includes
+ * collection of score extensions is the Shimmie board, which includes
  * user management, a wiki, a private messaging system, etc. But one could
  * easily remove the image board bits and simply have a wiki with users and
  * PMs; or one could replace it with a blog module; or one could have a blog
  * which links to images on an image board, with no wiki or messaging, and so
- * on and so on...
+ * on and so on..."
+ *
+ * Yep... one could replace these things, & that's what we're attempting to do.
  * 
  * To learn about the innards of SCore, start with the \ref overview.
  *

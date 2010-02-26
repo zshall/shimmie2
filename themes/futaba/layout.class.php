@@ -77,9 +77,8 @@ $header_html
 		<div id="footer">
 			<hr>
 			Images &copy; their respective owners,
-			<a href="http://code.shishnet.org/shimmie2/">Shimmie</a> &copy;
+			<a href="http://code.shishnet.org/shimmie2/">SCore</a> &copy;
 			<a href="http://www.shishnet.org/">Shish</a> &amp; Co 2007-2010,
-			based on the Danbooru concept.
 			<br>Futaba theme based on 4chan's layout and CSS :3
 			$debug
 			$contact

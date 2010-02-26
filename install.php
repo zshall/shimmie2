@@ -11,7 +11,7 @@
  - and other such things that aren't ready yet
 -->
 	<head>
-		<title>Shimmie Installation</title>
+		<title>SCore Installation</title>
 		<style>
 BODY {background: #EEE;font-family: "Arial", sans-serif;font-size: 14px;}
 H1, H3 {border: 1px solid black;background: #DDD;text-align: center;}
@@ -29,7 +29,7 @@ TD INPUT {width: 350px;}
 <?php if(false) { ?>
 		<div id="block">
 			<h1>Install Error</h1>
-			<p>Shimmie needs to be run via a web server with PHP support -- you
+			<p>SCore needs to be run via a web server with PHP support -- you
 			appear to be either opening the file from your hard disk, or your
 			web server is mis-configured.
 			<p>If you've installed a web server on your desktop PC, you probably
@@ -97,12 +97,6 @@ function begin() { // {{{
 	$thumberr = "";
 	$dberr = "";
 
-	if(check_gd_version() == 0 && check_im_version() == 0) {
-		$thumberr = "<p>PHP's GD extension seems to be missing, ".
-		      "and imagemagick's \"convert\" command cannot be found - ".
-			  "no thumbnailing engines are available.";
-	}
-
 	if(!function_exists("mysql_connect")) {
 		$dberr = "<p>PHP's MySQL extension seems to be missing; you may ".
 				"be able to use an unofficial alternative, checking ".
@@ -127,7 +121,7 @@ function begin() { // {{{
 
 	print <<<EOD
 		<div id="iblock">
-			<h1>Shimmie Installer</h1>
+			<h1>SCore Installer</h1>
 
 			$err
 			$thumberr
@@ -147,7 +141,7 @@ function begin() { // {{{
 					
 			<p>Databases should be specified like so:
 			<br>ie: <code>protocol://username:password@host/database?options</code>
-			<br>eg: <code>mysql://shimmie:pw123@localhost/shimmie?persist</code>
+			<br>eg: <code>mysql://SCore:pw123@localhost/SCore?persist</code>
 			
 			<p>For more help with installation, visit
 			<a href="http://trac.shishnet.org/shimmie2/wiki/Guides/Admin/Install">the
@@ -158,7 +152,6 @@ EOD;
 function install_process($database_dsn) { // {{{
 	create_tables($database_dsn);
 	insert_defaults($database_dsn);
-	build_dirs();
 	write_config($database_dsn);
 	
 	header("Location: index.php");
@@ -174,7 +167,7 @@ function create_tables($dsn) { // {{{
 		$engine = new SQLite();
 	}
 	else {
-		die("Unknown database engine; Shimmie currently officially supports MySQL
+		die("Unknown database engine; SCore currently officially supports MySQL
 		(mysql://), with hacks for Postgres (pgsql://) and SQLite (sqlite://)");
 	}
 
@@ -185,11 +178,6 @@ function create_tables($dsn) { // {{{
 	else {
 		$engine->init($db);
 
-		$db->execute($engine->create_table_sql("aliases", "
-			oldtag VARCHAR(128) NOT NULL PRIMARY KEY,
-			newtag VARCHAR(128) NOT NULL,
-			INDEX(newtag)
-		"));
 		$db->execute($engine->create_table_sql("config", "
 			name VARCHAR(128) NOT NULL PRIMARY KEY,
 			value TEXT
@@ -201,38 +189,6 @@ function create_tables($dsn) { // {{{
 			joindate SCORE_DATETIME NOT NULL DEFAULT SCORE_NOW,
 			admin SCORE_BOOL NOT NULL DEFAULT SCORE_BOOL_N,
 			email VARCHAR(128)
-		"));
-		$db->execute($engine->create_table_sql("images", "
-			id SCORE_AIPK,
-			owner_id INTEGER NOT NULL,
-			owner_ip SCORE_INET NOT NULL,
-			filename VARCHAR(64) NOT NULL,
-			filesize INTEGER NOT NULL,
-			hash CHAR(32) UNIQUE NOT NULL,
-			ext CHAR(4) NOT NULL,
-			source VARCHAR(255),
-			width INTEGER NOT NULL,
-			height INTEGER NOT NULL,
-			posted SCORE_DATETIME NOT NULL DEFAULT SCORE_NOW,
-			locked SCORE_BOOL NOT NULL DEFAULT SCORE_BOOL_N,
-			INDEX(owner_id),
-			INDEX(width),
-			INDEX(height),
-			FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
-		"));
-		$db->execute($engine->create_table_sql("tags", "
-			id SCORE_AIPK,
-			tag VARCHAR(64) UNIQUE NOT NULL,
-			count INTEGER NOT NULL DEFAULT 0
-		"));
-		$db->execute($engine->create_table_sql("image_tags", "
-			image_id INTEGER NOT NULL,
-			tag_id INTEGER NOT NULL,
-			INDEX(image_id),
-			INDEX(tag_id),
-			UNIQUE(image_id, tag_id),
-			FOREIGN KEY (image_id) REFERENCES images(id) ON DELETE CASCADE,
-			FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
 		"));
 		$db->execute("INSERT INTO config(name, value) VALUES('db_version', 8)");
 	}
@@ -254,7 +210,7 @@ function insert_defaults($dsn) { // {{{
 			$engine = new SQLite();
 		}
 		else {
-			die("Unknown database engine; Shimmie currently officially supports MySQL
+			die("Unknown database engine; SCore currently officially supports MySQL
 			(mysql://), with hacks for Postgres (pgsql://) and SQLite (sqlite://)");
 		}
 		$engine->init($db);
@@ -265,41 +221,7 @@ function insert_defaults($dsn) { // {{{
 		$db->Execute($user_insert, Array('Anonymous', null, 'N'));
 		$db->Execute($config_insert, Array('anon_id', $db->Insert_ID()));
 
-		if(check_im_version() > 0) {
-			$db->Execute($config_insert, Array('thumb_engine', 'convert'));
-		}
-
 		$db->Close();
-	}
-} // }}}
-function build_dirs() { // {{{
-	if(!file_exists("images")) @mkdir("images"); // *try* and make default dirs. Ignore any errors -- 
-	if(!file_exists("thumbs")) @mkdir("thumbs"); // if something is amiss, we'll tell the user later
-	if(!file_exists("data")) @mkdir("data");
-
-	if(
-			((!file_exists("images") || !file_exists("thumbs") || !file_exists("data")) && !is_writable("./")) ||
-			(!is_writable("images") || !is_writable("thumbs") || !is_writable("data"))
-	) {
-		print "Shimmie needs three folders in it's directory, 'images', 'thumbs', and 'data',
-		       and they need to be writable by the PHP user (if you see this error,
-			   if probably means the folders are owned by you, and they need to be
-			   writable by the web server).
-			   
-			   <p>Once you have created these folders, hit 'refresh' to continue.";
-		exit;
-	}
-	else {
-		assert(file_exists("images") && is_writable("images"));
-		assert(file_exists("thumbs") && is_writable("thumbs"));
-		assert(file_exists("data") && is_writable("data"));
-
-		if(!file_exists("images/ff")) {
-			for($i=0; $i<256; $i++) {
-				mkdir(sprintf("images/%02x", $i));
-				mkdir(sprintf("thumbs/%02x", $i));
-			}
-		}
 	}
 } // }}}
 function write_config($dsn) { // {{{
@@ -312,7 +234,7 @@ function write_config($dsn) { // {{{
 		$h_file_content = htmlentities($file_content);
 		print <<<EOD
 		The web server isn't allowed to write to the config file; please copy
-	    the text below, save it as 'config.php', and upload it into the shimmie
+	    the text below, save it as 'config.php', and upload it into the SCore
 	    folder manually. Make sure that when you save it, there is no whitespace
 		before the "&lt;?php" or after the "?&gt;"
 

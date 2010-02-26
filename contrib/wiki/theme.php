@@ -4,7 +4,7 @@ class WikiTheme extends Themelet {
 	/*
 	 * Show a page
 	 *
-	 * $page = the shimmie page object
+	 * $page = the SCore page object
 	 * $wiki_page = the wiki page, has ->title and ->body
 	 * $nav_page = a wiki page object with navigation, has ->body
 	 */

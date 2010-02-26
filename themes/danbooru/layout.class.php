@@ -9,7 +9,7 @@
 *              bar and title to the top of every page.
 */
 //Small changes added by zshall <http://seemslegit.com>
-//Changed CSS and layout to make shimmie look even more like danbooru
+//Changed CSS and layout to make SCore look even more like danbooru
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 Danbooru Theme - Notes (Bzchan)
 
@@ -17,8 +17,8 @@ Files: default.php, sidebar.js, style.css
 
 How to use a theme
 - Copy the danbooru folder with all its contained files into the "themes"
-  directory in your shimmie installation.
-- Log into your shimmie and change the Theme in the Board Config to your
+  directory in your SCore installation.
+- Log into your SCore and change the Theme in the Board Config to your
   desired theme.
 
 Changes in this theme include
@@ -216,7 +216,7 @@ $header_html
 		<div id="footer">
         <em>
 			Images &copy; their respective owners,
-			<a href="http://code.shishnet.org/shimmie2/">Shimmie</a> &copy;
+			<a href="http://code.shishnet.org/shimmie2/">SCore</a> &copy;
 			<a href="http://www.shishnet.org/">Shish</a> &amp; Co 2007-2010,
 			based on the Danbooru concept.
 			$debug

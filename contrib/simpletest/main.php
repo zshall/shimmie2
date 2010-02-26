@@ -153,41 +153,6 @@ class SCoreWebTestCase extends WebTestCase {
 	protected function assert_response($code) {parent::assertResponse($code);}
 }
 
-/**
- * A set of common Shimmie activities to test
- */
-class ShimmieWebTestCase extends SCoreWebTestCase {
-	protected function post_image($filename, $tags) {
-		$image_id = -1;
-		$this->setMaximumRedirects(0);
-
-        $this->get_page('post/list');
-		$this->assertText("Upload");
-		$this->setField("data0", $filename);
-		$this->setField("tags", $tags);
-		$this->click("Post");
-
-		$raw_headers = $this->getBrowser()->getHeaders();
-		$headers = explode("\n", $raw_headers);
-		foreach($headers as $header) {
-			$parts = explode(":", $header);
-			if(trim($parts[0]) == "X-Shimmie-Image-ID") {
-				$image_id = int_escape(trim($parts[1]));
-			}
-		}
-
-		$this->setMaximumRedirects(5);
-		return $image_id;
-	}
-
-	protected function delete_image($image_id) {
-		if($image_id > 0) {
-	        $this->get_page('post/view/'.$image_id);
-			$this->click("Delete");
-		}
-	}
-}
-
 /** @private */
 class TestFinder extends TestSuite {
 	function TestFinder($hint) {

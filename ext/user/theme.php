@@ -102,19 +102,10 @@ class UserPageTheme extends Themelet {
 		$page->add_block(new Block("Login", $html, "left", 90));
 	}
 
-	public function display_ip_list(Page $page, $uploads, $comments) {
+	public function display_ip_list(Page $page, $comments) {
 		$html = "<table id='ip-history'>";
-		$html .= "<tr><td>Uploaded from: ";
-		$n = 0;
-		foreach($uploads as $ip => $count) {
-			$html .= "<br>$ip ($count)";
-			if(++$n >= 20) {
-				$html .= "<br>...";
-				break;
-			}
-		}
 
-		$html .= "</td><td>Commented from:";
+		$html .= "<tr><td>Commented from:";
 		$n = 0;
 		foreach($comments as $ip => $count) {
 			$html .= "<br>$ip ($count)";

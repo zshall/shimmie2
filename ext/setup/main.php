@@ -164,9 +164,9 @@ class SetupBlock extends Block {
 class Setup extends SimpleExtension {
 	public function onInitExt($event) {
 		global $config;
-		$config->set_default_string("title", "Shimmie");
-		$config->set_default_string("front_page", "post/list");
-		$config->set_default_string("main_page", "post/list");
+		$config->set_default_string("title", "SCore");
+		$config->set_default_string("front_page", "setup");
+		$config->set_default_string("main_page", "setup");
 		$config->set_default_string("base_href", "./index.php?q=");
 		$config->set_default_string("theme", "default");
 		$config->set_default_bool("use_autodate", true);
@@ -266,7 +266,7 @@ class Setup extends SimpleExtension {
 		$sb->add_text_option("comment_wordpress_key", "<br>API key: ");
 		$sb->add_label(
 			"<br>&nbsp;<br><a href='".
-			recaptcha_get_signup_url($_SERVER["HTTP_HOST"], "Shimmie").
+			recaptcha_get_signup_url($_SERVER["HTTP_HOST"], "SCore").
 			"'>ReCAPTCHA</a>");
 		$sb->add_text_option("api_recaptcha_privkey", "<br>Private key: ");
 		$sb->add_text_option("api_recaptcha_pubkey", "<br>Public key: ");

@@ -6,16 +6,8 @@
  * License: GPLv2
  * Description: Various things to make admins' lives easier
  * Documentation:
- *  <p>Lowercase all tags:
- *  <br>Set all tags to lowercase for consistency
- *  <p>Recount tag use:
- *  <br>If the counts of images per tag get messed up somehow, this will reset them
- *  <p>Purge unused tags:
- *  <br>Get rid of all the tags that don't have any images associated with
- *  them (normally they were created as typos or spam); this is mostly for
- *  neatness, the performance gain is tiny...
  *  <p>Convert to InnoDB:
- *  <br>Convert your database tables to InnoDB, thus allowing shimmie to
+ *  <br>Convert your database tables to InnoDB, thus allowing SCore to
  *  take advantage of useful InnoDB-only features (this should be done
  *  automatically, this button only exists as a backup). This only applies
  *  to MySQL -- all other databases come with useful features enabled
@@ -58,18 +50,6 @@ class AdminPage implements Extension {
 				$redirect = false;
 
 				switch($_POST['action']) {
-					case 'lowercase all tags':
-						$this->lowercase_all_tags();
-						$redirect = true;
-						break;
-					case 'recount tag use':
-						$this->recount_tag_use();
-						$redirect = true;
-						break;
-					case 'purge unused tags':
-						$this->purge_unused_tags();
-						$redirect = true;
-						break;
 					case 'convert to innodb':
 						$this->convert_to_innodb();
 						$redirect = true;
@@ -98,27 +78,6 @@ class AdminPage implements Extension {
 		}
 	}
 
-	private function lowercase_all_tags() {
-		global $database;
-		$database->execute("UPDATE tags SET tag=lower(tag)");
-	}
-
-	private function recount_tag_use() {
-		global $database;
-		$database->Execute("
-			UPDATE tags
-			SET count = COALESCE(
-				(SELECT COUNT(image_id) FROM image_tags WHERE tag_id=tags.id GROUP BY tag_id),
-				0
-			)");
-	}
-
-	private function purge_unused_tags() {
-		global $database;
-		$this->recount_tag_use();
-		$database->Execute("DELETE FROM tags WHERE count=0");
-	}
-
 	private function dbdump($page) {
 		include "config.php";
 
@@ -138,20 +97,8 @@ class AdminPage implements Extension {
 
 		$page->set_mode("data");
 		$page->set_type("application/x-unknown");
-		$page->set_filename('shimmie-'.date('Ymd').'.sql');
+		$page->set_filename('SCore-'.date('Ymd').'.sql');
 		$page->set_data(shell_exec($cmd));
-	}
-
-	private function check_for_orphanned_images() {
-		$orphans = array();
-		foreach(glob("images/*") as $dir) {
-			foreach(glob("$dir/*") as $file) {
-				$hash = str_replace("$dir/", "", $file);
-				if(!$this->db_has_hash($hash)) {
-					$orphans[] = $hash;
-				}
-			}
-		}
 	}
 
 	private function convert_to_innodb() {

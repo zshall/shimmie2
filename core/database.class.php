@@ -108,7 +108,7 @@ class PostgreSQL extends DBEngine {
 	}
 }
 
-// shimmie functions for export to sqlite
+// SCore functions for export to sqlite
 function _unix_timestamp($date) { return strtotime($date); }
 function _now() { return date("Y-m-d h:i:s"); }
 function _floor($a) { return floor($a); }
@@ -268,7 +268,7 @@ class Database {
 
 	/**
 	 * Create a new database object using connection info
-	 * stored in config.php in the root shimmie folder
+	 * stored in config.php in the root SCore folder
 	 */
 	public function Database() {
 		global $database_dsn, $cache_dsn;
@@ -308,7 +308,7 @@ class Database {
 			print "
 			<html>
 				<head>
-					<title>Internal error - Shimmie-$version</title>
+					<title>Internal error - SCore-$version</title>
 				</head>
 				<body>
 					Internal error: Could not connect to database

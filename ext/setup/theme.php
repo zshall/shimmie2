@@ -46,8 +46,8 @@ class SetupTheme extends Themelet {
 			</table></form>
 			";
 
-		$page->set_title("Shimmie Setup");
-		$page->set_heading("Shimmie Setup");
+		$page->set_title("SCore Setup");
+		$page->set_heading("SCore Setup");
 		$page->add_block(new Block("Navigation", $this->build_navigation(), "left", 0));
 		$page->add_block(new Block("Setup", $table));
 	}
@@ -85,8 +85,8 @@ class SetupTheme extends Themelet {
 			</table></form>
 			";
 
-		$page->set_title("Shimmie Setup");
-		$page->set_heading("Shimmie Setup");
+		$page->set_title("SCore Setup");
+		$page->set_heading("SCore Setup");
 		$page->add_block(new Block("Navigation", $this->build_navigation(), "left", 0));
 		$page->add_block(new Block("Setup", $table));
 	}

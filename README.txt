@@ -6,14 +6,12 @@
         /_______  /|___|  /__|__|_|  /__|_|  /__|\___  >_______ \
                 \/      \/         \/      \/        \/        \/
 
-Shimmie Alpha
-~~~~~~~~~~~~~
-This code is for people who want to write extensions compatible with the
-next version of shimmie. You can run a production site with it if you're
-feeling brave, but it's not recommended.
-
-If there is a feature here, and not in the stable branch, that's probably
-because the feature doesn't work yet :P
+SCore Lite
+~~~~~~~~~~
+Shish's great Shimmie2 Imageboard runs on something he calls SCore, and
+I've noticed that it's quite useful. He mentioned that it can be extended
+easily to become anything, not just an imageboard. With this branch I
+attempt to remove Shimmie from Shimmie, leaving just SCore.
 
 
 Requirements
@@ -32,7 +30,7 @@ for whatever reason~
 Installation
 ~~~~~~~~~~~~
 1) Create a blank database
-2) Unzip shimmie into a folder on the web host
+2) Unzip SCore into a folder on the web host
 3) Visit the folder with a web browser
 4) Enter the location of the database
 5) Click "install". Hopefully you'll end up at the welcome screen; if
@@ -55,7 +53,7 @@ http://redmine.shishnet.org/projects/show/shimmie2 -- bug tracker
 
 Licence
 ~~~~~~~
-All code is GPLv2 unless mentioned otherwise; ie, if you give shimmie to
+All code is GPLv2 unless mentioned otherwise; ie, if you give SCore to
 someone else, you have to give them the source (which should be easy, as PHP
 is an interpreted language...). If you want to add customisations to your own
 site, then those customisations belong to you, and you can do what you want

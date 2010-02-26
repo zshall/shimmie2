@@ -36,7 +36,7 @@ class ADODB2_generic extends ADODB_DataDict {
 		
 		case 'L': return 'DECIMAL(1)';
 		// case 'I': return 'DECIMAL(10)';
-		case 'I': return 'INTEGER'; // Hack for shimmie: SQLite auto-increment requires the word "integer"
+		case 'I': return 'INTEGER'; // Hack for SCore: SQLite auto-increment requires the word "integer"
 		case 'I1': return 'DECIMAL(3)';
 		case 'I2': return 'DECIMAL(5)';
 		case 'I4': return 'DECIMAL(10)';

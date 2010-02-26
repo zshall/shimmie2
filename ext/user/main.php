@@ -179,7 +179,6 @@ class UserPage extends SimpleExtension {
 		) {
 			$this->theme->display_ip_list(
 				$page,
-				$this->count_upload_ips($event->display_user),
 				$this->count_comment_ips($event->display_user));
 		}
 	}
@@ -201,23 +200,6 @@ class UserPage extends SimpleExtension {
 		$this->create_user($event);
 	}
 
-	public function onSearchTermParse(Event $event) {
-		$matches = array();
-		if(preg_match("/^(poster|user)=(.*)$/i", $event->term, $matches)) {
-			$user = User::by_name($matches[2]);
-			if(!is_null($user)) {
-				$user_id = $user->id;
-			}
-			else {
-				$user_id = -1;
-			}
-			$event->add_querylet(new Querylet("images.owner_id = $user_id"));
-		}
-		else if(preg_match("/^(poster|user)_id=([0-9]+)$/i", $event->term, $matches)) {
-			$user_id = int_escape($matches[2]);
-			$event->add_querylet(new Querylet("images.owner_id = $user_id"));
-		}
-	}
 // }}}
 // Things done *with* the user {{{
 	private function login($page)  {
@@ -399,19 +381,6 @@ class UserPage extends SimpleExtension {
 	}
 // }}}
 // ips {{{
-	private function count_upload_ips($duser) {
-		global $database;
-		$rows = $database->db->GetAssoc("
-				SELECT
-					owner_ip,
-					COUNT(images.id) AS count,
-					MAX(posted) AS most_recent
-				FROM images
-				WHERE owner_id=?
-				GROUP BY owner_ip
-				ORDER BY most_recent DESC", array($duser->id), false, true);
-		return $rows;
-	}
 	private function count_comment_ips($duser) {
 		global $database;
 		$rows = $database->db->GetAssoc("
