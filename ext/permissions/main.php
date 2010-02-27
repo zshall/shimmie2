@@ -12,31 +12,41 @@
  *
  *				Development TODO now at http://github.com/zshall/shimmie2/issues
  */
- 
-class Permissions extends SimpleExtension {
+
+// Events...
+class PermissionScanEvent extends Event {
+	var $values = array();
 	/**
-	 * Functions of the Permissions Class:
-	 *		+ Err... sending the permission scan event
-	 */		
-	public function onInitExt(Event $event) {
-		// Send the event and let all the extensions add their permissions.
-		send_event(new PermissionScanEvent());
+	 * Gets the entire list of permissions
+	 */
+	public function get_perms() {
+		return $this->values;
+	}
+	/**
+	 * Add a permission to the global list.
+	 */
+	public function add_perm($perm_name, $perm_desc) {
+		$this->values[] = array("perm_name" => $perm_name, "perm_desc" => $perm_desc);
 	}
 }
 
-// Events...
-class PermissionScanEvent extends Event {}
-
-/*class Permissions_Test extends SimpleExtension {
+class GlobalPermissionTest extends SimpleExtension {
 	public function onPermissionScan(Event $event) {
-		// This test extension does what all extensions would do if this system is implemented.
-		// Right now, it just sets a few permissions that would be deemed necessary, but should be set elsewhere, such as in the extensions themselves.
 		global $permissions;
-		$permissions->add_perm("post", "Post");
-		$permissions->add_perm("comment", "Comment");
-		$permissions->add_perm("delete_posts", "Delete Posts");
-		$permissions->add_perm("delete_comments", "Delete Comments");
-		$permissions->add_perm("bulk_upload", "Bulk Upload");
+		$event->add_perm("test_perm2","testdescription2");
+	}
+	public function onInitExt(Event $event) {
+		global $permissions, $config;
+		$version = $config->get_int("test_perm_ext", 0);
+		 if($version < 2) {
+				Permissions::set_perm("anonymous","test_perm",false);
+				Permissions::set_perm("user","test_perm",false);
+				Permissions::set_perm("admin","test_perm",false);
+				Permissions::set_perm("anonymous","test_perm",true);
+				Permissions::set_perm("user","test_perm",true);
+				Permissions::set_perm("admin","test_perm",true);
+				//$config->set_int("test_perm_ext", 2); //Testing.
+		}
 	}
 	public function onPageRequest(Event $event) {
 		if($event->page_matches("permissions/test")) {
@@ -48,23 +58,6 @@ class PermissionScanEvent extends Event {}
 		}
 	}
 }
-
-class GlobalPermissionTest extends SimpleExtension {
-	public function onPermissionScan(Event $event) {
-		global $permissions;
-		$permissions->add_perm("test_perm","testdescription");
-	}
-	public function onInitExt(Event $event) {
-		global $permissions, $config;
-		$version = $config->get_int("test_perm_ext", 0);
-		 if($version < 1) {
-				$permissions->set_perm("anonymous","test_perm",true);
-				$permissions->set_perm("user","test_perm",true);
-				$permissions->set_perm("admin","test_perm",true);
-				$config->set_int("test_perm_ext", 1);
-		}
-	}
-}*/
 
 class Groups extends SimpleExtension {
 	/**
@@ -107,15 +100,22 @@ class Groups extends SimpleExtension {
 class GroupEditor extends Groups {
 	public function onPageRequest(Event $event) {
 		if($event->page_matches("groups/editor")) {
-		/**
-		 * Displays the groups editor.
-		 */
-			global $user, $database, $permissions;
+			/**
+			 * First, send the PermissionScanEvent so we can find out
+			 * what permissions we have.
+			 */
+			$pse = new PermissionScanEvent();
+			send_event($pse);
+			$all_perms = $pse->get_perms();
+			/**
+			 * Displays the groups editor.
+			 */
+			global $user, $database;
 			if(!$user->is_admin()) {
 				$this->theme->display_permission_denied($page);
 			} else {
 				//$all_perms = $database->get_all("SELECT * FROM permission_list ORDER BY id ASC");
-				$all_perms = $permissions->get_perms();
+				//$all_perms = $permissions->get_perms();
 				$groups = $database->get_all("SELECT * FROM group_list ORDER BY id ASC");
 				$this->theme->display_editor($all_perms, $groups);
 			}
@@ -125,7 +125,7 @@ class GroupEditor extends Groups {
 			/**
 			 * Adds a group
 			 */
-			global $page, $database, $user, $permissions;
+			global $page, $database, $user;
 			if(!$user->is_admin()) {
 				$this->theme->display_permission_denied($page);
 			} else {
@@ -136,7 +136,7 @@ class GroupEditor extends Groups {
 				$group_name = $_POST['group_name'];
 				if($group_name == "") { die("No group name!"); }
 				// Get all permissions
-				$all_perms = $permissions->get_perms();
+				//$all_perms = $permissions->get_perms();
 				// Now, start a loop...
 				for ($i = 0 ; $i < count($all_perms) ; $i++) {
 					$pn = $all_perms[$i]['perm_name'];
@@ -162,7 +162,7 @@ class GroupEditor extends Groups {
 			/**
 			 * Changes a group's permissions
 			 */
-			global $page, $database, $user, $permissions;
+			global $page, $database, $user;
 			if(!$user->is_admin()) {
 				$this->theme->display_permission_denied($page);
 			} else {
@@ -172,7 +172,7 @@ class GroupEditor extends Groups {
 				$id = $_POST['id'];
 				if($id == "") { die("No ID!"); }
 				// Get all permissions
-				$all_perms = $permissions->get_perms();
+				//$all_perms = $permissions->get_perms();
 				// Now, start a loop...
 				for ($i = 0 ; $i < count($all_perms) ; $i++) {
 					$pn = $all_perms[$i]['perm_name'];

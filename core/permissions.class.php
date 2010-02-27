@@ -5,36 +5,25 @@
  * Description: This is probably better to have as a class.
  *				Based on Shish's config class.
  */
-interface Permission {
-	/**
-	 * Add a permission to the global list.
-	 */
-	public function add_perm($perm_name, $perm_desc);
-	
+interface PermInt {
 	/**
 	 * Sets a default permission
 	 */
-	public function set_perm($group_name, $perm_name, $set=true);
-	
-	/**
-	 * Gets the entire list of permissions (?)
-	 */
-	public function get_perms();
-	
-	public function hellow();
+	public static function set_perm($group_name, $perm_name, $set=true);
 }
 
 
 /**
  * We probably only need one class after that interface.
  */
-abstract class BasePermission implements Permission {
-	var $values = array();
+abstract class Permissions implements PermInt {
 
-	public function add_perm($perm_name, $perm_desc) {
-		$this->values[] = array("perm_name" => $perm_name, "perm_desc" => $perm_desc);
+	
+	private function array_remove($arr,$value) {
+		return ;
 	}
-	public function set_perm($group_name, $perm_name, $set=true) {
+
+	public static function set_perm($group_name, $perm_name, $set=true) {
 		// I think I've figured it out.
 		// This will append $perm_name to the end of `group_permissions`
 		global $database;
@@ -49,18 +38,13 @@ abstract class BasePermission implements Permission {
 			}
 		} else {
 			if($set == false) {
-				// Code to remove it from the array.
+				// Not tested yet.
+				$current_perms = $database->get_row("SELECT `group_permissions` FROM `group_list` WHERE `group_name` = ?", array($group_name));
+				$perm_array = explode(",", $current_perms['group_permissions']);
+				if(in_array($perm_name, $perm_array)) { $perm_array = array_values(array_diff($perm_array,array($perm_name)));}
 			}
 		}
 	}
-	public function get_perms() {
-		return $this->values;
-	}
-	
-	public function hellow() {
-		return "Hello World.";
-	}
-}
 
-class GlobalPermission extends BasePermission {}
+}
 ?>

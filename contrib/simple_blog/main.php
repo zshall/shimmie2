@@ -15,19 +15,18 @@ class SimpleBlogPermissions extends SimpleExtension {
  * Zach: permissions system development.
  */
 	public function onPermissionScan(Event $event) {
-		global $permissions;
-                $permissions->add_perm("view_blog","View blog");
-		$permissions->add_perm("manage_blog","Manage Blog");
+                $event->add_perm("view_blog","View blog");
+		$event->add_perm("manage_blog","Manage Blog");
 	}
 	public function onInitExt(Event $event) {
 		global $permissions, $config;
 		$version = $config->get_int("pdef_blog", 0);
-		 if($version < 1) {
-				$permissions->set_perm("admin","manage_blog",true);
-				$permissions->set_perm("admin","view_blog",true);
-                                $permissions->set_perm("user","view_blog",true);
-                                $permissions->set_perm("anonymous","view_blog",true);
-				$config->set_int("pdef_blog", 1);
+		 if($version < 2) {
+				Permissions::set_perm("admin","manage_blog",true);
+				Permissions::set_perm("admin","view_blog",true);
+                                Permissions::set_perm("user","view_blog",true);
+                                Permissions::set_perm("anonymous","view_blog",true);
+				//$config->set_int("pdef_blog", 2);
 		}
 	}
 }

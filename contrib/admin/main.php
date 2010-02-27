@@ -37,20 +37,19 @@ class AdminBuildingEvent extends Event {
 
 class AdminPermissions extends SimpleExtension {
 /**
- * Zach: permissions system development.
+ * Zach: -_-
  */
 	public function onPermissionScan(Event $event) {
-		global $permissions;
-		$permissions->add_perm("manage_admin","Use admin tools");
-		$permissions->add_perm("export_sql","Export SQL Data");
+		$event->add_perm("manage_admin","Use admin tools");
+		$event->add_perm("export_sql","Export SQL Data");
 	}
 	public function onInitExt(Event $event) {
 		global $permissions, $config;
 		$version = $config->get_int("pdef_admin", 0);
-		 if($version < 1) {
-				$permissions->set_perm("admin","manage_admin",true);
-				$permissions->set_perm("admin","export_sql",true);
-				$config->set_int("pdef_admin", 1);
+		 if($version < 2) {
+				Permissions::set_perm("admin","manage_admin",true);
+				Permissions::set_perm("admin","export_sql",true);
+				//$config->set_int("pdef_admin", 2);
 		}
 	}
 }
