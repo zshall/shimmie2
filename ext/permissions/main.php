@@ -42,9 +42,9 @@ class GlobalPermissionTest extends SimpleExtension {
 				Permissions::set_perm("anonymous","test_perm",false);
 				Permissions::set_perm("user","test_perm",false);
 				Permissions::set_perm("admin","test_perm",false);
-				Permissions::set_perm("anonymous","test_perm",true);
-				Permissions::set_perm("user","test_perm",true);
-				Permissions::set_perm("admin","test_perm",true);
+				Permissions::set_perm("anonymous","test_perm2",false);
+				Permissions::set_perm("user","test_perm2",false);
+				Permissions::set_perm("admin","test_perm2",false);
 				//$config->set_int("test_perm_ext", 2); //Testing.
 		}
 	}
@@ -99,14 +99,15 @@ class Groups extends SimpleExtension {
 
 class GroupEditor extends Groups {
 	public function onPageRequest(Event $event) {
+		/**
+		 * First, send the PermissionScanEvent so we can find out
+		 * what permissions we have.
+		 */
+		$pse = new PermissionScanEvent();
+		send_event($pse);
+		$all_perms = $pse->get_perms();
+
 		if($event->page_matches("groups/editor")) {
-			/**
-			 * First, send the PermissionScanEvent so we can find out
-			 * what permissions we have.
-			 */
-			$pse = new PermissionScanEvent();
-			send_event($pse);
-			$all_perms = $pse->get_perms();
 			/**
 			 * Displays the groups editor.
 			 */
@@ -170,6 +171,7 @@ class GroupEditor extends Groups {
 				 * Slightly easier the second time around, though
 				 */
 				$id = $_POST['id'];
+				
 				if($id == "") { die("No ID!"); }
 				// Get all permissions
 				//$all_perms = $permissions->get_perms();
