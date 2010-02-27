@@ -26,7 +26,7 @@ class SimpleBlogPermissions extends SimpleExtension {
 				Permissions::set_perm("admin","view_blog",true);
                                 Permissions::set_perm("user","view_blog",true);
                                 Permissions::set_perm("anonymous","view_blog",true);
-				//$config->set_int("pdef_blog", 2);
+				$config->set_int("pdef_blog", 2);
 		}
 	}
 }

@@ -42,10 +42,10 @@ class GlobalPermissionTest extends SimpleExtension {
 				Permissions::set_perm("anonymous","test_perm",false);
 				Permissions::set_perm("user","test_perm",false);
 				Permissions::set_perm("admin","test_perm",false);
-				Permissions::set_perm("anonymous","test_perm2",false);
-				Permissions::set_perm("user","test_perm2",false);
-				Permissions::set_perm("admin","test_perm2",false);
-				//$config->set_int("test_perm_ext", 2); //Testing.
+				Permissions::set_perm("anonymous","test_perm2",true);
+				Permissions::set_perm("user","test_perm2",true);
+				Permissions::set_perm("admin","test_perm2",true);
+				$config->set_int("test_perm_ext", 2);
 		}
 	}
 	public function onPageRequest(Event $event) {
