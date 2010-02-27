@@ -11,7 +11,7 @@ interface PermInt {
 	public static function set_perm($group_name, $perm_name, $set=true);
 }
 
-abstract class Permissions implements PermInt {
+abstract class PermissionManager implements PermInt {
 	public static function set_perm($group_name, $perm_name, $set=true) {
 		global $database;
 		$get_current_permissions = $database->get_row("SELECT group_permissions FROM group_list WHERE group_name = ?", array($group_name));

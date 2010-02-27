@@ -47,8 +47,8 @@ class AdminPermissions extends SimpleExtension {
 		global $permissions, $config;
 		$version = $config->get_int("pdef_admin", 0);
 		 if($version < 2) {
-				Permissions::set_perm("admin","manage_admin",true);
-				Permissions::set_perm("admin","export_sql",true);
+				PermissionManager::set_perm("admin","manage_admin",true);
+				PermissionManager::set_perm("admin","export_sql",true);
 				$config->set_int("pdef_admin", 2);
 		}
 	}

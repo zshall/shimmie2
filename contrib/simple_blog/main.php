@@ -22,10 +22,10 @@ class SimpleBlogPermissions extends SimpleExtension {
 		global $permissions, $config;
 		$version = $config->get_int("pdef_blog", 0);
 		 if($version < 2) {
-				Permissions::set_perm("admin","manage_blog",true);
-				Permissions::set_perm("admin","view_blog",true);
-                                Permissions::set_perm("user","view_blog",true);
-                                Permissions::set_perm("anonymous","view_blog",true);
+				PermissionManager::set_perm("admin","manage_blog",true);
+				PermissionManager::set_perm("admin","view_blog",true);
+                                PermissionManager::set_perm("user","view_blog",true);
+                                PermissionManager::set_perm("anonymous","view_blog",true);
 				$config->set_int("pdef_blog", 2);
 		}
 	}
