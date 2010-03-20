@@ -34,6 +34,21 @@
  
 class Profile extends SimpleExtension {
 	// Kinda like the config interface
+	public function onInitExt($event) {
+		global $config;
+		$version = $config->get_int("pdef_profile", 0);
+		if($version < 1) {
+			PermissionManager::set_perm("admin","view_profiles",true);
+			PermissionManager::set_perm("user","view_profiles",true);
+			PermissionManager::set_perm("anonymous","view_profiles",true);
+			$config->set_int("pdef_profile", 1);
+		}
+	}
+
+	public function onPermissionScan(Event $event) {
+		$event->add_perm("view_profiles","View extended profile information");
+	}
+
 	public function onPrefBuilding($event) {
 		$pb = new PrefBlock("User Profile Info");
 		$pb->add_text_option("profile_name","<br />Real Name");
@@ -48,23 +63,25 @@ class Profile extends SimpleExtension {
 	}
 	public function onUserPageBuilding(Event $event) { // This function appears to work.
 		global $database, $user;
-		$pi = new DatabasePrefs($database, $event->display_user->id); // YAY! Works!
-		$realname = $pi->get_string("profile_name","No real name given");
-		$age = $pi->get_int("profile_age", "Too many");
-		$web = $pi->get_string("profile_website");
-		$aim = $pi->get_string("profile_aim");
-		$msn = $pi->get_string("profile_msn");
-		//$yim = $pb->get_string("profile_yim");		// Any other chat services add here.
-		//$gtalk = $pb->get_string("profile_gtalk");
-		$about = $pi->get_string("profile_aboutme","No information given.");
-		if($realname) $event->add_stats('Name: '.$realname);
-		if($age) $event->add_stats($age.' years old');
-		if($web) $event->add_stats('Website: <a href="'.$web.'">'.$web.'</a>');
-		if($aim) $event->add_stats('AIM Address: <a href="aim:goim?screenname='.$aim.'&message=Hello!">'.$aim.'</a>');
-		if($msn) $event->add_stats('MSN Address: '.$msn);
-		//if($realname) $event->add_stats('YIM Address: '.$yim);
-		//if($realname) $event->add_stats('Gtalk Address: '.$gtalk);
-		if($about) $event->add_stats($about);
+		if($user->can("view_profiles")) {
+			$pi = new DatabasePrefs($database, $event->display_user->id); // YAY! Works!
+			$realname = $pi->get_string("profile_name","No real name given");
+			$age = $pi->get_int("profile_age", "Too many");
+			$web = $pi->get_string("profile_website");
+			$aim = $pi->get_string("profile_aim");
+			$msn = $pi->get_string("profile_msn");
+			//$yim = $pb->get_string("profile_yim");		// Any other chat services add here.
+			//$gtalk = $pb->get_string("profile_gtalk");
+			$about = $pi->get_string("profile_aboutme","No information given.");
+			if($realname) $event->add_stats('Name: '.$realname);
+			if($age) $event->add_stats($age.' years old');
+			if($web) $event->add_stats('Website: <a href="'.$web.'">'.$web.'</a>');
+			if($aim) $event->add_stats('AIM Address: <a href="aim:goim?screenname='.$aim.'&message=Hello!">'.$aim.'</a>');
+			if($msn) $event->add_stats('MSN Address: '.$msn);
+			//if($realname) $event->add_stats('YIM Address: '.$yim);
+			//if($realname) $event->add_stats('Gtalk Address: '.$gtalk);
+			if($about) $event->add_stats($about);
+		}
 	}
 }
 ?>
