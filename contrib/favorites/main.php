@@ -32,11 +32,21 @@ class Favorites extends SimpleExtension {
 		if($config->get_int("ext_favorites_version", 0) < 1) {
 			$this->install();
 		}
+		$version = $config->get_int("pdef_favorites", 0);
+			if($version < 1) {
+				PermissionManager::set_perm("admin","add_favorite",true);
+				PermissionManager::set_perm("user","add_favorite",true);
+				$config->set_int("pdef_favorites", 1);
+			}
+	}
+
+	public function onPermissionScan(Event $event) {
+		$event->add_perm("add_favorite","Add Favorite Images");
 	}
 
 	public function onImageAdminBlockBuilding($event) {
 		global $database, $page, $user;
-		if(!$user->is_anonymous()) {
+		if($user->can("add_favorite")) {
 			$user_id = $user->id;
 			$image_id = $event->image->id;
 
@@ -57,7 +67,7 @@ class Favorites extends SimpleExtension {
 
 	public function onPageRequest($event) {
 		global $page, $user;
-		if($event->page_matches("change_favorite") && !$user->is_anonymous()) {
+		if($event->page_matches("change_favorite") && $user->can("add_favorite")) {
 			$image_id = int_escape($_POST['image_id']);
 			if (($_POST['favorite_action'] == "set") || ($_POST['favorite_action'] == "unset")) {
 				send_event(new FavoriteSetEvent($image_id, $user, ($_POST['favorite_action'] == "set")));
