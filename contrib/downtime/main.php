@@ -33,9 +33,9 @@ class Downtime implements Extension {
 		}
 		
 		if($event instanceof InitExtEvent) {
-			global $permissions, $config;
+			global $config;
 			$version = $config->get_int("pdef_downtime", 0);
-			if($version < 2) {
+			if($version < 1) {
 				PermissionManager::set_perm("admin","login_while_down",true);
 				$config->set_int("pdef_downtime", 1);
 			}
