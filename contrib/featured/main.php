@@ -88,6 +88,59 @@ class Featured extends SimpleExtension {
 				}
 			}
 		}
+		if($event->page_matches("featured")) {
+			if($event->get_arg(0) == "list") {
+				if(!class_exists("SimpleBlog")) {
+					global $page;
+					$page->set_mode("data");
+					$html = "Sorry... this page requires the simple_blog extension.";
+					$page->set_data($html);
+				} else {
+					global $database;
+					if(is_null($event->get_arg(1))||$event->get_arg(1)<=0) {
+						$current_page = 1;
+					} else {
+						$current_page = $event->get_arg(1);
+					}
+					
+					$posts_per_page = $config->get_int("blog_posts_per_page");
+					$start = $posts_per_page * ($current_page - 1);
+					
+					$featured_index = $database->get_all("SELECT *
+												FROM featured
+												ORDER BY id DESC
+												LIMIT ? OFFSET ?",
+												array($posts_per_page, $start));
+					
+					$total_pages = ceil(($database->db->GetOne("SELECT COUNT(*) FROM featured") / $posts_per_page));
+
+					// id, feature_date, feature_image_id, feature_best
+					
+					/*				 $post['id'],
+									 $post['owner_id'],
+									 $post['post_date'],
+									 $post['post_title'],
+									 $post['post_text']*/
+					
+					for($i = 0; $i < count($featured_index); $i++) {
+						/**
+						 * Going to try and shoehorn this into a blog.
+						 **/
+						$image = Image::by_id($featured_index[$i]["feature_image_id"]);
+						$posts[$i]["id"] = $i;
+						$posts[$i]["owner_id"] = $image->owner_id;
+						$posts[$i]["post_date"] = $image->posted;
+						$posts[$i]["post_title"] = "#".$image->id;
+						$posts[$i]["post_text"] = "[image:".$image->id."]";
+					}
+					$blogtheme = new SimpleBlogTheme();
+					$extension["name"] = "featured";
+					$extension["title"] = "Featured Images";
+					$extension["permalinks"] = false;
+					$blogtheme->display_blog_index($posts, $current_page, $total_pages, $extension);
+				}
+			}
+		}
 		if($event->page_matches("helloworld")) {
 			global $page;
 			$page->set_mode("data");
