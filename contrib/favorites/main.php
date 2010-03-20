@@ -33,11 +33,11 @@ class Favorites extends SimpleExtension {
 			$this->install();
 		}
 		$version = $config->get_int("pdef_favorites", 0);
-			if($version < 1) {
-				PermissionManager::set_perm("admin","add_favorite",true);
-				PermissionManager::set_perm("user","add_favorite",true);
-				$config->set_int("pdef_favorites", 1);
-			}
+		if($version < 1) {
+			PermissionManager::set_perm("admin","add_favorite",true);
+			PermissionManager::set_perm("user","add_favorite",true);
+			$config->set_int("pdef_favorites", 1);
+		}
 	}
 
 	public function onPermissionScan(Event $event) {
