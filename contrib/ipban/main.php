@@ -47,10 +47,20 @@ class IPBan implements Extension {
 			}
 
 			$this->check_ip_ban();
+			
+			$version = $config->get_int("pdef_ipban", 0);
+			if($version < 1) {
+				PermissionManager::set_perm("admin","manage_ip_bans",true);
+				$config->set_int("pdef_ipban", 1);
+			}
+		}
+
+		if($event instanceof PermissionScanEvent) {
+			$event->add_perm("manage_ip_bans","Manage IP Bans");
 		}
 
 		if(($event instanceof PageRequestEvent) && $event->page_matches("ip_ban")) {
-			if($user->is_admin()) {
+			if($user->can("manage_ip_bans")) {
 				if($event->get_arg(0) == "add") {
 					if(isset($_POST['ip']) && isset($_POST['reason']) && isset($_POST['end'])) {
 						if(empty($_POST['end'])) $end = null;
@@ -79,7 +89,7 @@ class IPBan implements Extension {
 		}
 
 		if($event instanceof UserBlockBuildingEvent) {
-			if($user->is_admin()) {
+			if($user->can("manage_ip_bans")) {
 				$event->add_link("IP Bans", make_link("ip_ban/list"));
 			}
 		}
