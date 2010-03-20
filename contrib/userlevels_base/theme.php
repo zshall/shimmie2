@@ -13,16 +13,16 @@ class UserLevelExperienceTheme extends Themelet {
 		$pl = $ulprefs->get_int("user_level_c_remain",0);
 		$pp = $ulprefs->get_int("user_level_p_percent",0);
 	
-		$html = '<link type="text/css" href="/contrib/userlevels_base/css/custom-theme/jquery-ui-1.7.2.custom.css" rel="stylesheet" /> 
-		<script type="text/javascript" src="/contrib/userlevels_base/js/jquery-1.3.2.min.js"></script>
-		<script type="text/javascript" src="/contrib/userlevels_base/js/jquery-ui-1.7.2.custom.min.js"></script>';
-		$html .=   '<script type="text/javascript"> 
-				$(function() {
-					$("#progressbar'.$up.'").progressbar({
-						value: '.$pp.'	});
-				});
+		$html = '<script type="text/javascript" src="js/jquery.progressbar.min.js"></script>';
+		$html .='<script type="text/javascript">
+					$(document).ready(function() {
+						$("#pbl").progressBar({
+								steps: 20,
+								showText: false
+						});
+					});
 				</script>
-				<div align="center"><div id="progressbar'.$up.'" title="'.$pp.'%" style="width:40%; height: 20px;"></div></div>';
+				<span class="progressBar" id="pbl" title="Current EXP: '.$up.'. EXP required for level '.{$ul+1}.': '.$pl.'">'.$pp.'</span>';
 
 		$html .= "<b>User's level: $ul</b><br />
 			  
