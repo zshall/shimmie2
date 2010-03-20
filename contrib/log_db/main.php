@@ -26,6 +26,16 @@ class LogDatabase extends SimpleExtension {
 		}
 
 		$config->set_default_int("log_db_priority", SCORE_LOG_INFO);
+		
+		$version = $config->get_int("pdef_log_db", 0);
+		if($version < 1) {
+			PermissionManager::set_perm("admin","view_score_log",true);
+			$config->set_int("pdef_log_db", 1);
+		}
+	}
+	
+	public function onPermissionScan(Event $event) {
+		$event->add_perm("view_score_log","View SCore Logs");
 	}
 
 	public function onSetupBuilding($event) {
@@ -43,7 +53,7 @@ class LogDatabase extends SimpleExtension {
 	public function onPageRequest($event) {
 		global $database, $user;
 		if($event->page_matches("log/view")) {
-			if($user->is_admin()) {
+			if($user->can("view_score_log")) {
 				$wheres = array();
 				$args = array();
 				$page_num = int_escape($event->get_arg(0));
@@ -110,7 +120,7 @@ class LogDatabase extends SimpleExtension {
 
 	public function onUserBlockBuilding($event) {
 		global $user;
-		if($user->is_admin()) {
+		if($user->can("view_score_log")) {
 			$event->add_link("Event Log", make_link("log/view"));
 		}
 	}
