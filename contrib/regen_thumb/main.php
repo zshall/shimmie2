@@ -13,10 +13,23 @@
  */
 
 class RegenThumb extends SimpleExtension {
+	public function onInitExt($event) {
+		global $config;
+		$version = $config->get_int("pdef_regen_thumb", 0);
+		if($version < 1) {
+			PermissionManager::set_perm("admin","regen_thumbs",true);
+			$config->set_int("pdef_regen_thumb", 1);
+		}
+	}
+
+	public function onPermissionScan(Event $event) {
+		$event->add_perm("regen_thumbs","Regenerate Thumbnails");
+	}
+
 	public function onPageRequest($event) {
 		global $config, $database, $page, $user;
 
-		if($event->page_matches("regen_thumb") && $user->is_admin() && isset($_POST['image_id'])) {
+		if($event->page_matches("regen_thumb") && $user->can("regen_thumbs") && isset($_POST['image_id'])) {
 			$image = Image::by_id(int_escape($_POST['image_id']));
 			send_event(new ThumbnailGenerationEvent($image->hash, $image->ext));
 			$this->theme->display_results($page, $image);
@@ -25,7 +38,7 @@ class RegenThumb extends SimpleExtension {
 
 	public function onImageAdminBlockBuilding($event) {
 		global $user;
-		if($user->is_admin()) {
+		if($user->can("regen_thumbs")) {
 			$event->add_part($this->theme->get_buttons_html($event->image->id));
 		}
 	}
