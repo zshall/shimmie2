@@ -10,26 +10,26 @@
  *
  *		Development: http://github.com/zshall/shimmie2/
  */
-class SimpleBlogPermissions extends SimpleExtension {
-/**
- * Zach: permissions system development.
- */
-	public function onPermissionScan(Event $event) {
-                $event->add_perm("view_blog","View blog");
-		$event->add_perm("manage_blog","Manage Blog");
-	}
-	public function onInitExt(Event $event) {
-		global $permissions, $config;
-		$version = $config->get_int("pdef_blog", 0);
-		 if($version < 2) {
-				PermissionManager::set_perm("admin","manage_blog",true);
-				PermissionManager::set_perm("admin","view_blog",true);
-                                PermissionManager::set_perm("user","view_blog",true);
-                                PermissionManager::set_perm("anonymous","view_blog",true);
-				$config->set_int("pdef_blog", 2);
-		}
-	}
-}
+//class SimpleBlogPermissions extends SimpleExtension {
+///**
+// * Zach: permissions system development.
+// */
+//	public function onPermissionScan(Event $event) {
+//                $event->add_perm("view_blog","View blog");
+//		$event->add_perm("manage_blog","Manage Blog");
+//	}
+//	public function onInitExt(Event $event) {
+//		global $permissions, $config;
+//		$version = $config->get_int("pdef_blog", 0);
+//		 if($version < 2) {
+//				PermissionManager::set_perm("admin","manage_blog",true);
+//				PermissionManager::set_perm("admin","view_blog",true);
+//                                PermissionManager::set_perm("user","view_blog",true);
+//                                PermissionManager::set_perm("anonymous","view_blog",true);
+//				$config->set_int("pdef_blog", 2);
+//		}
+//	}
+//}
 
 class SimpleBlogConfig extends SimpleExtension {
     /**
@@ -191,9 +191,11 @@ class SimpleBlog extends SimpleExtension {
                                                     LIMIT ? OFFSET ?",
                                                     array($posts_per_page, $start));
                         
-                        $total_pages = (int)($database->db->GetOne("SELECT COUNT(*) FROM simple_blog") / $posts_per_page);
-            
-                        $this->theme->display_blog_index($posts, $current_page, $total_pages);
+                        $total_pages = ceil(($database->db->GetOne("SELECT COUNT(*) FROM simple_blog") / $posts_per_page));
+            			$extension["name"] = "blog";
+						$extension["title"] = $title = $config->get_string('blog_title');
+						$extension["permalinks"] = true;
+                        $this->theme->display_blog_index($posts, $current_page, $total_pages, $extension);
                         break;
                     case "view":
                         global $database, $config;
@@ -206,8 +208,10 @@ class SimpleBlog extends SimpleExtension {
                         $post = $database->get_row("SELECT *
                                                    FROM simple_blog
                                                    ORDER BY id DESC");
-                        
-                        $this->theme->display_blog_post($post);
+                        $extension["name"] = "blog";
+						$extension["title"] = $title = $config->get_string('blog_title');
+						$extension["permalinks"] = false;
+                        $this->theme->display_blog_post($post, $extension);
                         break;
                 }
             }

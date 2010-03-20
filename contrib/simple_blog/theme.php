@@ -8,53 +8,54 @@ class SimpleBlogTheme extends Themelet {
         $page->add_block(new Block("Welcome to the Blog Manager!", $html, "main", 10));
         $page->add_block(new Block("Navigation", "<a href='".make_link()."'>Index</a>", "left", 0));
     }
-    public function display_blog_index($posts, $page_number, $total_pages) {
+    public function display_blog_index($posts, $page_number, $total_pages, $extension) {
         global $page, $config;
+		$ename = $extension["name"];
         /**
          * Pagination:
          */
         $prev = $page_number - 1;
-	$next = $page_number + 1;
+		$next = $page_number + 1;
         
         $h_prev = ($page_number <= 1) ? "Prev" :
-                "<a href='".make_link("blog/$prev")."'>Prev</a>";
-        $h_index = "<a href='".make_link("blog/list")."'>Index</a>";
+                "<a href='".make_link("$ename/$prev")."'>Prev</a>";
+        $h_index = "<a href='".make_link("$ename/list")."'>Index</a>";
         $h_home = "<a href='".make_link()."'>&#171; Home</a>";
         $h_next = ($page_number >= $total_pages) ? "Next" :
-                "<a href='".make_link("blog/$next")."'>Next</a>";
+                "<a href='".make_link("$ename/$next")."'>Next</a>";
 
-	$nav = "$h_prev | $h_index | $h_next<br />$h_home";
+		$nav = "$h_prev | $h_index | $h_next<br />$h_home";
         /**
          * Displaying the blog:
          */
         
-        $title = $config->get_string('blog_title');
+        $title = $extension["title"];
         
         $page->set_title($title);
         $page->set_heading($title);
         $this->generate_blog_header($nav);
-        $this->generate_blog_index($posts);
-        $this->display_paginator($page, "blog/list", null, $page_number, $total_pages);
+        $this->generate_blog_index($posts, $extension);
+        $this->display_paginator($page, "$ename/list", null, $page_number, $total_pages);
         send_event(new BlogBuildingEvent()); // make it extendable.
     }
-    public function display_blog_post($post) {
+    public function display_blog_post($post, $extension) {
         global $page, $config;
         /**
          * Displaying the blog:
          */
-        
-        $title = $config->get_string('blog_title');
+        $ename = $extension["name"];
+		$title = $extension["title"];
         
         $page->set_title($title);
         $page->set_heading($title);
-        $this->generate_blog_header("<a href='".make_link("blog/list")."'>Index</a><br /><a href='".make_link()."'>&#171; Home</a>");
+        $this->generate_blog_header("<a href='".make_link("$ename/list")."'>Index</a><br /><a href='".make_link()."'>&#171; Home</a>");
         
         $this->generate_blog_post($post['id'],
                                  $post['owner_id'],
                                  $post['post_date'],
                                  $post['post_title'],
                                  $post['post_text'],
-                                 0);
+                                 0, $extension);
         
         send_event(new BlogBuildingEvent()); // make it extendable.
     }
@@ -129,7 +130,7 @@ class SimpleBlogTheme extends Themelet {
 
         return $html;
     }
-    private function generate_blog_post($pi, $pa, $pd, $ph, $pb, $i) {
+    private function generate_blog_post($pi, $pa, $pd, $ph, $pb, $i, $e) {
             global $page, $config;
             $id = $pi;
             $post_author = User::by_id($pa);
@@ -143,11 +144,11 @@ class SimpleBlogTheme extends Themelet {
             send_event($tfe);
             $post_text = $tfe->formatted;
             
-	    $post_text = str_replace('\n\r', '<br>', $post_text);
+	    	$post_text = str_replace('\n\r', '<br>', $post_text);
             $post_text = str_replace('\r\n', '<br>', $post_text);
             $post_text = str_replace('\n', '<br>', $post_text);
             $post_text = str_replace('\r', '<br>', $post_text);
-	    $post_text = stripslashes($post_text);
+	    	$post_text = stripslashes($post_text);
             
             $pattern = '/\[([^:]+):([^\]]+)\]/';
             preg_match_all($pattern, $post_text, $matches);
@@ -183,16 +184,17 @@ class SimpleBlogTheme extends Themelet {
                     }
                 }
             }
-            
-            $body = "<div class='blog-body'>
-                <span class='blog-header'><a href='".make_link("blog/view/$id")."'>#</a> Written by {$post_author->name} on $clean_date<br /><br /></span>
+           //-----------------------------------------------------------------------------------------------------------------------------------------------------------
+           if($e["permalinks"] == true) {$permalink = "<a href='".make_link("{$e['name']}/view/$id")."'>#</a> ";} else {$permalink = "";}
+		   $body = "<div class='blog-body'>
+                <span class='blog-header'>".$permalink."By {$post_author->name} on $clean_date<br /><br /></span>
                 $post_text
                 </div>
             ";
             
             $page->add_block(new Block($post_title, $body, "main", ($i+5)));
     }
-    private function generate_blog_index($posts) {
+    private function generate_blog_index($posts, $extension) {
         global $page, $config;
         
         for ($i = 0 ; $i < count($posts) ; $i++)
@@ -205,7 +207,7 @@ class SimpleBlogTheme extends Themelet {
                                      $posts[$i]['post_date'],
                                      $posts[$i]['post_title'],
                                      $posts[$i]['post_text'],
-                                     $i);
+                                     $i, $extension);
         }
         $page->add_block(new Block(NULL,$config->get_string("blog_header"), "main", 0));
     }
