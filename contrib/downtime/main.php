@@ -31,12 +31,25 @@ class Downtime implements Extension {
 				$this->theme->display_notification($page);
 			}
 		}
+		
+		if($event instanceof InitExtEvent) {
+			global $permissions, $config;
+			$version = $config->get_int("pdef_downtime", 0);
+			if($version < 2) {
+				PermissionManager::set_perm("admin","login_while_down",true);
+				$config->set_int("pdef_downtime", 1);
+			}
+		}
+		
+		if($event instanceof PermissionScanEvent) {
+			$event->add_perm("login_while_down","Use site in downtime mode");
+		}
 	}
 
 	private function check_downtime(PageRequestEvent $event) {
 		global $user, $config;
 
-		if($config->get_bool("downtime") && !$user->is_admin() &&
+		if($config->get_bool("downtime") && !$user->can("login_while_down") &&
 				($event instanceof PageRequestEvent) && !$this->is_safe_page($event)) {
 			$msg = $config->get_string("downtime_message");
 			$this->theme->display_message($msg);
