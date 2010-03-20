@@ -20,15 +20,28 @@ class ET implements Extension {
 		if(is_null($this->theme)) $this->theme = get_theme_object($this);
 
 		if(($event instanceof PageRequestEvent) && $event->page_matches("system_info")) {
-			if($user->is_admin()) {
+			if($user->can("view_system_info")) {
 				$this->theme->display_info_page($page, $this->get_info());
 			}
 		}
 
 		if($event instanceof UserBlockBuildingEvent) {
-			if($user->is_admin()) {
+			if($user->can("view_system_info")) {
 				$event->add_link("System Info", make_link("system_info"));
 			}
+		}
+		
+		if($event instanceof InitExtEvent) {
+			global $config;
+			$version = $config->get_int("pdef_et", 0);
+			if($version < 1) {
+				PermissionManager::set_perm("admin","view_system_info",true);
+				$config->set_int("pdef_et", 1);
+			}
+		}
+		
+		if($event instanceof PermissionScanEvent) {
+			$event->add_perm("view_system_info","View System Info");
 		}
 	}
 
