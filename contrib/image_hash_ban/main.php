@@ -40,6 +40,15 @@ class ImageBan implements Extension {
 			if($config->get_int("ext_imageban_version") < 1) {
 				$this->install();
 			}
+			$version = $config->get_int("pdef_imageban", 0);
+			if($version < 1) {
+				PermissionManager::set_perm("admin","manage_image_bans",true);
+				$config->set_int("pdef_imageban", 1);
+			}
+		}
+		
+		if($event instanceof PermissionScanEvent) {
+			$event->add_perm("manage_image_bans","Manage Image Bans");
 		}
 
 		if($event instanceof DataUploadEvent) {
@@ -51,7 +60,7 @@ class ImageBan implements Extension {
 		}
 
 		if(($event instanceof PageRequestEvent) && $event->page_matches("image_hash_ban")) {
-			if($user->is_admin()) {
+			if($user->can("manage_image_bans")) {
 				if($event->get_arg(0) == "add") {
 					if(isset($_POST['hash']) && isset($_POST['reason'])) {
 						send_event(new AddImageHashBanEvent($_POST['hash'], $_POST['reason']));
@@ -89,7 +98,7 @@ class ImageBan implements Extension {
 		}
 
 		if($event instanceof UserBlockBuildingEvent) {
-			if($user->is_admin()) {
+			if($user->can("manage_image_bans")) {
 				$event->add_link("Image Bans", make_link("image_hash_ban/list/1"));
 			}
 		}
@@ -103,7 +112,7 @@ class ImageBan implements Extension {
 		}
 
 		if($event instanceof ImageAdminBlockBuildingEvent) {
-			if($user->is_admin()) {
+			if($user->can("manage_image_bans")) {
 				$event->add_part($this->theme->get_buttons_html($event->image));
 			}
 		}
