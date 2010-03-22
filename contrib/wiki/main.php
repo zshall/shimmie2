@@ -78,6 +78,18 @@ class Wiki extends SimpleExtension {
 				locked ENUM('Y', 'N') DEFAULT 'N' NOT NULL AFTER REVISION");
 			$config->set_int("ext_wiki_version", 2);
 		}
+		$version = $config->get_int("pdef_wiki", 0);
+		if($version < 1) {
+			PermissionManager::set_perm("admin","manage_wiki",true);
+			PermissionManager::set_perm("admin","use_wiki",true);
+			PermissionManager::set_perm("user","use_wiki",true);
+			$config->set_int("pdef_wiki", 1);
+		}
+	}
+
+	public function onPermissionScan(Event $event) {
+		$event->add_perm("manage_wiki","Manage wiki (lock / delete pages)");
+		$event->add_perm("use_wiki","Edit wiki pages");
 	}
 
 	public function onPageRequest($event) {
@@ -101,7 +113,7 @@ class Wiki extends SimpleExtension {
 			$title = $_POST['title'];
 			$rev = int_escape($_POST['revision']);
 			$body = $_POST['body'];
-			$lock = $user->is_admin() && isset($_POST['lock']) && ($_POST['lock'] == "on");
+			$lock = $user->can("manage_wiki") && isset($_POST['lock']) && ($_POST['lock'] == "on");
 
 			if($this->can_edit($user, $this->get_page($title))) {
 				$wikipage = $this->get_page($title);
@@ -130,7 +142,7 @@ class Wiki extends SimpleExtension {
 			}
 		}
 		else if($event->page_matches("wiki_admin/delete_revision")) {
-			if($user->is_admin()) {
+			if($user->can("manage_wiki")) {
 				global $database;
 				$database->Execute(
 						"DELETE FROM wiki_pages WHERE title=? AND revision=?",
@@ -141,7 +153,7 @@ class Wiki extends SimpleExtension {
 			}
 		}
 		else if($event->page_matches("wiki_admin/delete_all")) {
-			if($user->is_admin()) {
+			if($user->can("manage_wiki")) {
 				global $database;
 				$database->Execute(
 						"DELETE FROM wiki_pages WHERE title=?",
@@ -183,14 +195,13 @@ class Wiki extends SimpleExtension {
 		global $config;
 
 		// admins can edit everything
-		if($user->is_admin()) return true;
+		if($user->can("manage_wiki")) return true;
 
 		// anon / user can't ever edit locked pages
 		if($page->is_locked()) return false;
 
 		// anon / user can edit if allowed by config
-		if($config->get_bool("wiki_edit_anon", false) && $user->is_anonymous()) return true;
-		if($config->get_bool("wiki_edit_user", false) && !$user->is_anonymous()) return true;
+		if($user->can("use_wiki")) return true;
 
 		return false;
 	}

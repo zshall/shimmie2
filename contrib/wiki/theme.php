@@ -19,7 +19,7 @@ class WikiTheme extends Themelet {
 
 		// only the admin can edit the sidebar
 		global $user;
-		if($user->is_admin()) {
+		if($user->can("manage_wiki")) {
 			$tfe->formatted .= "<p>(<a href='".make_link("wiki/wiki:sidebar", "edit=on")."'>Edit</a>)";
 		}
 
@@ -43,7 +43,7 @@ class WikiTheme extends Themelet {
 		$i_revision = int_escape($page->revision) + 1;
 
 		global $user;
-		if($user->is_admin()) {
+		if($user->can("manage_wiki")) {
 			$val = $page->is_locked() ? " checked" : "";
 			$lock = "<br>Lock page: <input type='checkbox' name='lock'$val>";
 		}
@@ -78,7 +78,7 @@ class WikiTheme extends Themelet {
 				</form></td>
 			" :
 			"";
-		if($user->is_admin()) {
+		if($user->can("manage_wiki")) {
 			$edit .= "
 				<td><form action='".make_link("wiki_admin/delete_revision")."' method='POST'>
 					<input type='hidden' name='title' value='".html_escape($page->title)."'>
