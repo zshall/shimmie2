@@ -1,11 +1,13 @@
 <?php
 
 class RatingsTheme extends Themelet {
-	public function get_rater_html($image_id, $rating) {
+	public function get_rater_html($image_id, $rating, $extended) {
 		$i_image_id = int_escape($image_id);
 		$s_checked = $rating == 's' ? " checked" : "";
 		$q_checked = $rating == 'q' ? " checked" : "";
 		$e_checked = $rating == 'e' ? " checked" : "";
+		$i_checked = $rating == 'i' ? " checked" : "";
+		$invisible = $extended == true ? "<input type='radio' name='rating' value='i' id='i'$i_checked><label for='e'>Invisible</label>" : "";
 		$html = "
 			<tr>
 				<td>Rating</td>
@@ -13,6 +15,7 @@ class RatingsTheme extends Themelet {
 					<input type='radio' name='rating' value='s' id='s'$s_checked><label for='s'>Safe</label>
 					<input type='radio' name='rating' value='q' id='q'$q_checked><label for='q'>Questionable</label>
 					<input type='radio' name='rating' value='e' id='e'$e_checked><label for='e'>Explicit</label>
+					$invisible
 				</td>
 			</tr>
 		";
@@ -38,6 +41,7 @@ class RatingsTheme extends Themelet {
 								<option value='q'>Questionable</option>
 								<option value='e'>Explicit</option>
 								<option value='u'>Unrated</option>
+								<option value='i'>Invisible</option>
 							</select>
 						</td>
 					</tr>
@@ -55,6 +59,7 @@ class RatingsTheme extends Themelet {
 			case 's': return "Safe";
 			case 'q': return "Questionable";
 			case 'e': return "Explicit";
+			case 'i': return "Invisible";
 			default: return "Unknown";
 		}
 	}

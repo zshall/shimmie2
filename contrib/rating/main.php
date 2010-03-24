@@ -4,13 +4,16 @@
  * Author: Shish <webmaster@shishnet.org>
  * License: GPLv2
  * Description: Allow users to rate images "safe", "questionable" or "explicit"
+ *				Zach: working with this to create a queue / schedule system. Right now, I'll just add a new rating (i for invisible) that's only visible to admins.
+ *					  Next, I'll work on a script that'll "release" queued images. Perhaps a cron job will suffice. /queued/release?
+ *					  Also... can_rate($userid)... if a user is admin, this will return "extended". They'll get the invisible option.
  */
 
 class RatingSetEvent extends Event {
 	var $image, $user, $rating;
 
 	public function RatingSetEvent(Image $image, User $user, $rating) {
-		assert(in_array($rating, array("s", "q", "e", "u")));
+		assert(in_array($rating, array("s", "q", "e", "u", "i")));
 		$this->image = $image;
 		$this->user = $user;
 		$this->rating = $rating;
@@ -60,7 +63,7 @@ class Ratings implements Extension {
 
 			$config->set_default_string("ext_rating_anon_privs", 'squ');
 			$config->set_default_string("ext_rating_user_privs", 'sqeu');
-			$config->set_default_string("ext_rating_admin_privs", 'sqeu');
+			$config->set_default_string("ext_rating_admin_privs", 'sqeui');
 		}
 
 		if($event instanceof RatingSetEvent) {
@@ -69,7 +72,8 @@ class Ratings implements Extension {
 
 		if($event instanceof ImageInfoBoxBuildingEvent) {
 			if($this->can_rate()) {
-				$event->add_part($this->theme->get_rater_html($event->image->id, $event->image->rating), 80);
+				$extended = $this->can_rate() == "extended" ? true : false;
+				$event->add_part($this->theme->get_rater_html($event->image->id, $event->image->rating, $extended), 80);
 			}
 		}
 
@@ -85,7 +89,7 @@ class Ratings implements Extension {
 			$privs['Safe and Unknown'] = 'su';
 			$privs['Safe and Questionable'] = 'sq';
 			$privs['Safe, Questionable, Unknown'] = 'squ';
-			$privs['All'] = 'sqeu';
+			$privs['All'] = 'sqeui';
 
 			$sb = new SetupBlock("Image Ratings");
 			$sb->add_choice_option("ext_rating_anon_privs", $privs, "Anonymous: ");
@@ -104,7 +108,7 @@ class Ratings implements Extension {
 				$set = Ratings::privs_to_sql(Ratings::get_user_privs($user));
 				$event->add_querylet(new Querylet("rating IN ($set)"));
 			}
-			if(preg_match("/^rating=([sqeu]+)$/", $event->term, $matches)) {
+			if(preg_match("/^rating=([sqeui]+)$/", $event->term, $matches)) {
 				$sqes = $matches[1];
 				$arr = array();
 				for($i=0; $i<strlen($sqes); $i++) {
@@ -113,11 +117,32 @@ class Ratings implements Extension {
 				$set = join(', ', $arr);
 				$event->add_querylet(new Querylet("rating IN ($set)"));
 			}
-			if(preg_match("/^rating=(safe|questionable|explicit|unknown)$/", strtolower($event->term), $matches)) {
+			if(preg_match("/^rating=(safe|questionable|explicit|unknown|invisible)$/", strtolower($event->term), $matches)) {
 				$text = $matches[1];
 				$char = $text[0];
 				$event->add_querylet(new Querylet("rating = ?", array($char)));
 			}
+		}
+		
+		if($event instanceof DisplayingImageEvent) {
+			/**
+			 * Deny images upon insufficient permissions.
+			 **/
+			global $user, $database, $page;
+			$user_view_level = Ratings::get_user_privs($user);
+			$user_view_level = preg_split('//', $user_view_level, -1);
+			$image_level = $database->get_row("SELECT  `rating` FROM  `images` WHERE id =?",$event->image->id);
+			$image_level = $image_level["rating"];
+			if(!in_array($image_level, $user_view_level)) {
+				$page->set_mode("redirect");
+				$page->set_redirect(make_link("above_viewing_limit"));
+			}
+		}
+		
+		if(($event instanceof PageRequestEvent) && $event->page_matches("above_viewing_limit")) {
+			global $page;
+			$page->set_title("Denied ;_;");
+			$page->add_block(new Block("Sorry...", "You don't have permission to view this image."));
 		}
 	}
 
@@ -149,6 +174,7 @@ class Ratings implements Extension {
 			case "s": return "Safe";
 			case "q": return "Questionable";
 			case "e": return "Explicit";
+			case "i": return "Invisible";
 			default:  return "Unknown";
 		}
 	}
@@ -157,7 +183,7 @@ class Ratings implements Extension {
 	private function can_rate() {
 		global $config, $user;
 		if($user->is_anonymous() && $config->get_string("ext_rating_anon_privs") == "sqeu") return false;
-		if($user->is_admin()) return true;
+		if($user->is_admin()) return "extended";
 		if(!$user->is_anonymous() && $config->get_string("ext_rating_user_privs") == "sqeu") return true;
 		return false;
 	}
