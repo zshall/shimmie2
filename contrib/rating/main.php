@@ -135,14 +135,8 @@ class Ratings implements Extension {
 			$image_level = $image_level["rating"];
 			if(!in_array($image_level, $user_view_level)) {
 				$page->set_mode("redirect");
-				$page->set_redirect(make_link("above_viewing_limit"));
+				$page->set_redirect(make_link("post/list"));
 			}
-		}
-		
-		if(($event instanceof PageRequestEvent) && $event->page_matches("above_viewing_limit")) {
-			global $page;
-			$page->set_title("Denied ;_;");
-			$page->add_block(new Block("Sorry...", "You don't have permission to view this image."));
 		}
 	}
 
@@ -224,4 +218,67 @@ class Ratings implements Extension {
 	}
 }
 add_event_listener(new Ratings());
+
+/*
+ * Name: Advance Queue (dependent version)
+ * Author: Zach Hall <zach@sosguy.net> [http://seemslegit.com]
+ * License: GPLv2
+ * Description: Selects a number of images rated as "i", and changes them to "u"
+ * 				Uses ratings extension for convienence.
+ */
+class AdvanceQueue extends SimpleExtension {
+	public function onPageRequest($event) {
+		global $page, $database, $config;
+		$html = "<pre>";
+		if($event->page_matches("advance_queue")) {
+			$PASSPHRASE = $config->get_string("ext_rating_queue_passphrase", "changeme");
+			if($PASSPHRASE != "changeme") {
+				if($PASSPHRASE != "" && !is_null($PASSPHRASE)) {
+					if($event->get_arg(0) == $PASSPHRASE) {
+						$html .= "Passphrase OK: ".$PASSPHRASE."<br />";
+						if(is_numeric($event->get_arg(1)) && $event->get_arg(1) > 0 && $event->get_arg(1) < 100) {
+							$limit = int_escape($event->get_arg(1));
+							$html .= "Number OK: $limit<br /><br />";
+							$image_list = $database->get_all("SELECT `id`
+															FROM `images`
+															WHERE `rating` = 'i'
+															ORDER BY `id` ASC
+															LIMIT ?", $limit);
+							for($i=0;$i<count($image_list);$i++) {
+								$image_id = $image_list[$i]['id'];
+								$database->Execute("UPDATE images SET rating=? WHERE id=?", array("u", $image_id));
+								$html .= "Changed image #".$image_id."'s status from i to u.<br />";
+							}
+							$html .= "<br /> All completed successfully.";
+						} else {
+							$html .= "Number error.";
+						}
+					} else {
+						$html .= "Passphrase error: incorrect passphrase.";
+					}
+				} else {
+					$html .= "Passphrase error: blank passphrase!";
+				}
+			} else {
+				$html .= "Passphrase error: default passphrase. Change your passphrase in /setup/";
+			}
+			$page->set_mode("data");
+			$html .= "</pre>";
+			$page->set_data($html);
+		}
+	}
+	
+	public function onSetupBuilding($event) {
+		global $config;
+		$sb = new SetupBlock("Queue Options");
+		$sb->add_label("To use the queue, rate some images as 'invisible', and then visit /advance_queue/PASSPHRASE/x where x is how many images you want to release from the queue. I recommend setting up a cronjob to do this so that 'new' content is added every day!");
+		$sb->add_text_option("ext_rating_queue_passphrase", "<br />Passphrase: ");
+		$event->panel->add_block($sb);
+	}
+	
+	public function onInitExt($event) {
+		global $config;
+		$config->set_default_string("ext_rating_queue_passphrase", "changeme");
+	}
+}
 ?>
